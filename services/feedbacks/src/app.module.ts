@@ -1,10 +1,26 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+
+import configuration from './config/configuration';
+import { validate } from './config/env.validation';
+import { MongooseConfigService } from './config/mongoose-config.service';
+import { FeedbacksController } from './api/feedbacks/feedbacks.controller';
+import { FeedbacksModule } from './api/feedbacks/feedbacks.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      validate,
+      isGlobal: true,
+      load: [configuration],
+    }),
+    MongooseModule.forRootAsync({
+      useClass: MongooseConfigService,
+    }),
+    FeedbacksModule,
+  ],
+  controllers: [FeedbacksController],
+  providers: [],
 })
 export class AppModule {}
