@@ -1,0 +1,22 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "services/feedbacks/src",
+  "monorepo": true,
+  "root": "services/feedbacks",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "services/feedbacks/tsconfig.json"
+  },
+  "projects": {
+    "feedbacks": {
+      "type": "application",
+      "root": "services/feedbacks",
+      "entryFile": "main",
+      "sourceRoot": "services/feedbacks/src",
+      "compilerOptions": {
+        "deleteOutDir": true,
+        "tsConfigPath": "services/feedbacks/tsconfig.json"
+      }
+    }
+  }
+}
