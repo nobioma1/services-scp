@@ -6,12 +6,6 @@ import appConfig from '../src/config/app-config';
 import { AppModule } from '../src/app.module';
 import { SQSService } from '../src/common/sqs/sqs.service';
 
-const TEST_DATA = {
-  question:
-    'On a scale of 1-10, how likely are you to recommend this to to someone you know?',
-  comment: 'This is a test comment',
-};
-
 describe('FeedbacksController (e2e)', () => {
   let app: INestApplication;
 
@@ -43,12 +37,15 @@ describe('FeedbacksController (e2e)', () => {
   });
 
   it('(POST) /api/v1/feedbacks - Should register question', () => {
+    const TEST_QUESTION =
+      'On a scale of 1-10, how likely are you to recommend this to to someone you know?';
+
     return request(app.getHttpServer())
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question })
+      .send({ question: TEST_QUESTION })
       .expect(201)
       .expect((res) => {
-        expect(res.body.question).toEqual(TEST_DATA.question);
+        expect(res.body.question).toEqual(TEST_QUESTION);
         expect(res.body.feedbackId).toEqual(expect.any(String));
       });
   });
@@ -61,27 +58,32 @@ describe('FeedbacksController (e2e)', () => {
   });
 
   it('(POST) /api/v1/feedbacks/:feedbackId - record feedback', async () => {
+    const TEST_QUESTION = 'How much do you like test?';
+    const TEST_COMMENT = 'Very well';
+
     const req = request(app.getHttpServer());
     const feedbackRes = await req
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question });
+      .send({ question: TEST_QUESTION });
 
     return req
       .post(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`)
-      .send({ comment: TEST_DATA.comment, rating: 4 })
+      .send({ comment: TEST_COMMENT, rating: 4 })
       .expect(201)
       .expect((res) => {
         expect(res.body.rating).toEqual(4);
-        expect(res.body.comment).toEqual(TEST_DATA.comment);
+        expect(res.body.comment).toEqual(TEST_COMMENT);
         expect(res.body.feedbackId).toEqual(feedbackRes.body.feedbackId);
       });
   });
 
   it('(POST) /api/v1/feedbacks/:feedbackId - record feedback only rating', async () => {
+    const TEST_QUESTION = 'How much do you like code?';
+
     const req = request(app.getHttpServer());
     const feedbackRes = await req
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question });
+      .send({ question: TEST_QUESTION });
 
     return req
       .post(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`)
@@ -95,16 +97,19 @@ describe('FeedbacksController (e2e)', () => {
         const sqsService = app.get(SQSService);
         expect(sqsService.sendMessage).toHaveBeenCalledWith({
           rating: 3,
-          feedbackId: feedbackRes.body.feedbackId,
+          id: expect.any(String),
+          questionId: feedbackRes.body.feedbackId,
         });
       });
   });
 
   it('(POST) /api/v1/feedbacks/:feedbackId - validate feedback', async () => {
+    const TEST_QUESTION = 'How much do you like food?';
+
     const req = request(app.getHttpServer());
     const feedbackRes = await req
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question });
+      .send({ question: TEST_QUESTION });
 
     return req
       .post(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`)
@@ -113,10 +118,12 @@ describe('FeedbacksController (e2e)', () => {
   });
 
   it('(GET) /api/v1/feedbacks/:feedbackId - get feedback summary', async () => {
+    const TEST_QUESTION = 'Rate question?';
+
     const req = request(app.getHttpServer());
     const feedbackRes = await req
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question });
+      .send({ question: TEST_QUESTION });
 
     return req
       .get(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`)
@@ -130,10 +137,12 @@ describe('FeedbacksController (e2e)', () => {
   });
 
   it('(GET) /api/v1/feedbacks/:feedbackId/comments - get feedback comments', async () => {
+    const TEST_QUESTION = 'comment question?';
+
     const req = request(app.getHttpServer());
     const feedbackRes = await req
       .post('/api/v1/feedbacks')
-      .send({ question: TEST_DATA.question });
+      .send({ question: TEST_QUESTION });
 
     const rates = [1, 2, 5, 5, 2, 4, 1, 4];
     await Promise.all(
@@ -141,9 +150,7 @@ describe('FeedbacksController (e2e)', () => {
         req.post(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`).send({
           rating: rate,
           comment:
-            rate % 2 === 0
-              ? `${idx + 1}. ${TEST_DATA.comment}-${rate} `
-              : undefined,
+            rate % 2 === 0 ? `${idx + 1}. comment res-${rate} ` : undefined,
         }),
       ),
     );
@@ -152,7 +159,7 @@ describe('FeedbacksController (e2e)', () => {
       .get(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}/comments`)
       .expect(200)
       .expect((res) => {
-        console.log(res.body);
+        expect(res.body).toHaveLength(4);
       });
   });
 });

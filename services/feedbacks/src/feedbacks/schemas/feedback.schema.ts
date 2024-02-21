@@ -18,7 +18,7 @@ const DEFAULT_RATING = {
   },
 })
 export class Feedback {
-  @Prop({ default: uuidv4() })
+  @Prop({ default: uuidv4 })
   questionId: string;
 
   @Prop({ required: true })

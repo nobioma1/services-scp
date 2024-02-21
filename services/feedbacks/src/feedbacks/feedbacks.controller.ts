@@ -7,7 +7,7 @@ import {
 } from './dto/create-question.dto';
 import { IsQuestionGuard } from './guards/is-question.guard';
 import { Question } from './decorators/question.decorator';
-import { Feedback } from './schemas/feedback.schema';
+import { FeedbackDocument } from './schemas/feedback.schema';
 
 @Controller('feedbacks')
 export class FeedbacksController {
@@ -24,7 +24,7 @@ export class FeedbacksController {
   @UseGuards(IsQuestionGuard)
   @Post(':questionId')
   postFeedback(
-    @Question() feedback: Feedback,
+    @Question() feedback: FeedbackDocument,
     @Body() createFeedbackDto: CreateFeedbackDto,
   ) {
     return this.feedbacksService.createFeedback(feedback, createFeedbackDto);
@@ -32,13 +32,13 @@ export class FeedbacksController {
 
   @UseGuards(IsQuestionGuard)
   @Get(':questionId')
-  getFeedbacksRatings(@Question() feedback: Feedback) {
+  getFeedbacksRatings(@Question() feedback: FeedbackDocument) {
     return this.feedbacksService.getFeedbacksRatings(feedback);
   }
 
   @UseGuards(IsQuestionGuard)
   @Get(':questionId/comments')
-  getComments(@Question() feedback: Feedback) {
+  getComments(@Question() feedback: FeedbackDocument) {
     return this.feedbacksService.getComments(feedback);
   }
 }

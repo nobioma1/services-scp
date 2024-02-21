@@ -12,7 +12,7 @@ export type CommentDocument = mongoose.HydratedDocument<Comment>;
   },
   toJSON: {
     versionKey: false,
-    transform: function (doc, ret) {
+    transform: function (_, ret) {
       ret.id = ret._id;
       delete ret._id;
     },
