@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 
 import { SQSService } from '../common/sqs/sqs.service';
 import { Feedback, FeedbackDocument } from './schemas/feedback.schema';
-import { Comment, CommentDocument } from './schemas/comment.schema';
+import { Comment } from './schemas/comment.schema';
 import {
   CreateFeedbackDto,
   CreateQuestionDto,
@@ -74,13 +74,13 @@ export class FeedbacksService {
 
     return {
       feedbackId: feedback.questionId,
-      cummRating: totalScore / totalRatings || 0,
+      cumRating: totalScore / totalRatings || 0,
       numberOfFeedbacks: totalRatings,
       rating: feedback.ratings,
     };
   }
 
-  getComments(feedback: FeedbackDocument): Promise<CommentDocument[]> {
+  getComments(feedback: FeedbackDocument): Promise<Comment[]> {
     return this.commentModel.find({ feedback }).exec();
   }
 }

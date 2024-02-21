@@ -130,7 +130,7 @@ describe('FeedbacksController (e2e)', () => {
       .expect(200)
       .expect((res) => {
         expect(res.body.feedbackId).toEqual(feedbackRes.body.feedbackId);
-        expect(res.body.cummRating).toBeDefined();
+        expect(res.body.cumRating).toBeDefined();
         expect(res.body.numberOfFeedbacks).toBeDefined();
         expect(res.body.rating).toBeDefined();
       });
