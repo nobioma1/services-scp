@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 
-import { AppModule } from '../src/app.module';
 import appConfig from '../src/config/app-config';
+import { AppModule } from '../src/app.module';
+import { SQSService } from '../src/common/sqs/sqs.service';
 
 const TEST_DATA = {
   question:
@@ -17,7 +18,14 @@ describe('FeedbacksController (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(SQSService)
+      .useValue({
+        sendMessage: jest.fn().mockResolvedValue({
+          MessageId: 'sqs-message-id',
+        }),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     appConfig(app);
@@ -82,6 +90,13 @@ describe('FeedbacksController (e2e)', () => {
       .expect((res) => {
         expect(res.body.rating).toEqual(3);
         expect(res.body.feedbackId).toEqual(feedbackRes.body.feedbackId);
+      })
+      .then(() => {
+        const sqsService = app.get(SQSService);
+        expect(sqsService.sendMessage).toHaveBeenCalledWith({
+          rating: 3,
+          feedbackId: feedbackRes.body.feedbackId,
+        });
       });
   });
 
@@ -122,10 +137,13 @@ describe('FeedbacksController (e2e)', () => {
 
     const rates = [1, 2, 5, 5, 2, 4, 1, 4];
     await Promise.all(
-      rates.map((rate) =>
+      rates.map((rate, idx) =>
         req.post(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`).send({
           rating: rate,
-          comment: rate % 2 === 0 ? TEST_DATA.comment : undefined,
+          comment:
+            rate % 2 === 0
+              ? `${idx + 1}. ${TEST_DATA.comment}-${rate} `
+              : undefined,
         }),
       ),
     );

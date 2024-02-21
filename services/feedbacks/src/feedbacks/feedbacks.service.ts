@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+import { SQSService } from '../common/sqs/sqs.service';
 import { Feedback } from './schemas/feedback.schema';
 import { Comment } from './schemas/comment.schema';
 import {
@@ -14,6 +15,7 @@ export class FeedbacksService {
   constructor(
     @InjectModel(Feedback.name) private feedbackModel: Model<Feedback>,
     @InjectModel(Comment.name) private commentModel: Model<Comment>,
+    private readonly sqsService: SQSService,
   ) {}
 
   async createQuestion(
@@ -33,8 +35,6 @@ export class FeedbacksService {
   ): Promise<{ feedbackId: string; comment: string; rating: number }> {
     const { comment, rating } = createFeedbackDto;
 
-    console.log(rating, comment);
-
     if (comment) {
       const createdComment = new this.commentModel({
         feedback,
@@ -44,7 +44,15 @@ export class FeedbacksService {
       await createdComment.save();
     }
 
-    // put rating update in a queue
+    try {
+      // put rating update in a queue
+      await this.sqsService.sendMessage({
+        rating,
+        feedbackId: feedback.questionId,
+      });
+    } catch (error) {
+      console.error('Error adding rating to queue ');
+    }
 
     return { feedbackId: feedback.questionId, comment, rating };
   }
@@ -72,6 +80,7 @@ export class FeedbacksService {
   }
 
   getComments(feedback: Feedback): Promise<Comment[]> {
+    console.log(feedback);
     return this.commentModel.find({ feedback }).exec();
   }
 }

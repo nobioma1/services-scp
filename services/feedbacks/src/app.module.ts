@@ -5,8 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { MongooseConfigService } from './config/mongoose-config.service';
-import { FeedbacksController } from './api/feedbacks/feedbacks.controller';
-import { FeedbacksModule } from './api/feedbacks/feedbacks.module';
+import { FeedbacksController } from './feedbacks/feedbacks.controller';
+import { FeedbacksModule } from './feedbacks/feedbacks.module';
 
 @Module({
   imports: [

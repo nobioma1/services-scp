@@ -11,6 +11,12 @@ class EnvironmentVariables {
 
   @IsString()
   DB_NAME: string;
+
+  @IsString()
+  SQS_QUEUE_URL: string;
+
+  @IsString()
+  AWS_REGION: string;
 }
 
 export function validate(config: Record<string, unknown>) {

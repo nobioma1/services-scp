@@ -14,6 +14,7 @@ const DEFAULT_RATING = {
 @Schema({
   timestamps: {
     createdAt: 'createdAt',
+    updatedAt: false,
   },
 })
 export class Feedback {
