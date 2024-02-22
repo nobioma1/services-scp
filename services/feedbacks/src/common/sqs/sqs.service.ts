@@ -15,8 +15,10 @@ export class SQSService {
 
   async sendMessage(
     msgObj: Record<string, string | number>,
+    msgGroupId?: string,
   ): Promise<SendMessageCommandOutput> {
     const command = new SendMessageCommand({
+      MessageGroupId: msgGroupId,
       QueueUrl: this.configService.get('SQS_QUEUE_URL'),
       MessageBody: JSON.stringify(msgObj),
     });
