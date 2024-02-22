@@ -74,7 +74,7 @@ module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
   eb_application_name     = "feedbacks-rating-app"
-  eb_env_name             = lower("${var.project_name}-${terraform.workspace}")
+  eb_env_name             = lower("feedbacks-services-app-${terraform.workspace}")
   eb_env_instance_profile = "LabInstanceProfile"
   environment_variables = [
     { name = "AWS_REGION", value = "${var.aws_default_region}" },
