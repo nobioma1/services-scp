@@ -73,8 +73,8 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
 module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
-  eb_application_name     = "feedbacks-rating-app"
-  eb_env_name             = lower("feedbacks-services-app-${terraform.workspace}")
+  eb_application_name     = "feedbacks-ratings-app-${terraform.workspace}"
+  eb_env_name             = lower("feedbacks-ratings-app-${terraform.workspace}")
   eb_env_instance_profile = "LabInstanceProfile"
   environment_variables = [
     { name = "AWS_REGION", value = "${var.aws_default_region}" },
