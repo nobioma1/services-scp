@@ -96,7 +96,7 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
 # connect trigger feedback lambda function and sqs queue
 resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
   event_source_arn = aws_sqs_queue.feedback_ratings_queue.arn
-  function_name    = module.feedback_queue_processor_lambda.arn
+  function_name    = module.feedback_queue_processor_lambda.lambda_function_name
   enabled          = true
 }
 
