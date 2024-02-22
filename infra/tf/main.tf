@@ -73,7 +73,7 @@ module "feedback_queue_processor_lambda" {
   runtime       = "nodejs18.x"
   role_arn      = data.aws_iam_role.iam_role.arn
 
-  source_dir  = "${local.feedback_lambda_path}/FeedbackQueueProcessor/index.js"
+  source_dir  = "${local.feedback_lambda_path}/FeedbackQueueProcessor"
   output_path = "${path.module}/build/feedback_queue_processor_zip"
   layers      = [aws_lambda_layer_version.feedbacks_lambda_layer.arn]
 
