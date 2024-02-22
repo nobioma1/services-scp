@@ -12,7 +12,7 @@ export class MongooseConfigService implements MongooseOptionsFactory {
   createMongooseOptions(): MongooseModuleOptions {
     return {
       uri: this.config.get<string>('MONGO_URI'),
-      dbName: this.config.get<string>('DB_NAME'),
+      dbName: 'feedbacks',
     };
   }
 }

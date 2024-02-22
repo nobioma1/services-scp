@@ -1,0 +1,37 @@
+name: Destroy Terraform Infrastructure
+
+on: [workflow_dispatch]
+
+env:
+  TF_WORKSPACE: production
+  TF_VAR_doppler_token: ${{ secrets.TF_VAR_DOPPLER_TOKEN }}
+  TF_VAR_aws_default_region: ${{ secrets.AWS_REGION }}
+  TF_VAR_eb_ubuntu_ami: ${{ secrets.EB_UBUNTU_AMI }}
+  TF_VAR_ec2_key_pair_name: ${{ secrets.EC2_KEY_PAIR_NAME }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  infrastructure:
+    name: Terraform infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/tf
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.5'
+          
+      - name: Terraform init
+        id: init
+        run: terraform init
+      
+      - name: Terraform destory
+        id: destroy
+        run: terraform destroy -auto-approve

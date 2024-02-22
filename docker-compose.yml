@@ -1,18 +1,6 @@
 version: '3.8'
 
 services:
-  mongo_db:
-      image: mongo:7.0
-      command: mongod --quiet --logpath /dev/null 
-      restart: always
-      ports:
-        - "27017:27017"
-      volumes:
-        - ./.docker/db-data:/data/db
-      environment:
-        MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-        MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-  
   web:
     build: ./apps/web
     volumes:
@@ -21,21 +9,18 @@ services:
     ports:
       - '3000:3000'
 
-  feedbacks-service: 
+  feedbacks-service:
     build: ./services/feedbacks
     volumes:
       - ./services/feedbacks:/app/
       - /app/node_modules
     ports:
-      - "8003:8003"
-    depends_on:
-      - mongo_db
+      - '8003:8003'
     environment:
       PORT: 8003
-      MONGO_URI: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo_db:27017"
-      DB_NAME: feedbacks
-      SQS_QUEUE_URL: http://sqs-url
       AWS_REGION: us-east-1
+      MONGO_URI: ${FEEDBACKS_MONGO_URI}
+      SQS_QUEUE_URL: ${FEEDBACKS_SQS_QUEUE_URL}
 
 volumes:
   db-data:

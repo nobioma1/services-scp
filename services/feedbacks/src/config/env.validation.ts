@@ -10,9 +10,6 @@ class EnvironmentVariables {
   MONGO_URI: string;
 
   @IsString()
-  DB_NAME: string;
-
-  @IsString()
   SQS_QUEUE_URL: string;
 
   @IsString()
