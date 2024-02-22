@@ -8,6 +8,12 @@ terraform {
       source = "DopplerHQ/doppler"
     }
   }
+
+  backend "s3" {
+    bucket = "tf-services-app"
+    key    = "terraform/state/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 data "aws_iam_role" "iam_role" {
@@ -69,7 +75,7 @@ module "aws-elasticbeanstalk" {
 
   eb_application_name     = "feedbacks-rating-app"
   eb_env_name             = lower("${var.project_name}-${terraform.workspace}")
-  eb_env_instance_profile = "EC2_EB_Instance_Role"
+  eb_env_instance_profile = "LabInstanceProfile"
   environment_variables = [
     { name = "AWS_REGION", value = "${var.aws_default_region}" },
     { name = "MONGO_URI", value = "${module.secrets.feedbacks_db_uri}" },
