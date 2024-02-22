@@ -41,16 +41,17 @@ jobs:
         if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: CI=true npm run test:e2e 
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Build and Generate deployment package
         if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           npm run build
           zip -r deploy.zip ./dist ./package.json -x '*.git*'
-      
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
+          aws s3 cp feedbacks-${{ github.sha }}.zip s3://${{env.EB_ARTIFACTS_BUCKET}}
 
       - name: Create EB application version
         if: steps.buildapifilter.outputs.feedbacks == 'true'

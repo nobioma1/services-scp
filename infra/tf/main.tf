@@ -72,8 +72,8 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
 
 resource "random_string" "hash" {
   length  = 5
-  special = false 
-  upper   = false 
+  special = false
+  upper   = false
 }
 
 module "aws-elasticbeanstalk" {
