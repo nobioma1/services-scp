@@ -24,10 +24,30 @@ locals {
   feedback_lambda_path = "${path.root}/../../services/feedbacks/lambda"
 }
 
+# load secrets
 module "secrets" {
   source = "./modules/secrets"
 }
 
+
+# create bucket for build artifacts
+resource "aws_s3_bucket" "build_artifacts_bucket" {
+  bucket_prefix = "scp-services-build-artifacts-"
+  force_destroy = true
+}
+
+# write build artifacts bucket name to secrets
+resource "doppler_secret" "BUILD_ARTIFACTS_BUCKET_NAME" {
+  name       = "BUILD_ARTIFACTS_BUCKET_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = aws_s3_bucket.build_artifacts_bucket.bucket
+  depends_on = [aws_s3_bucket.build_artifacts_bucket]
+}
+
+
+# Feedbacks/Ratings Service
+# Create lambda function layer
 resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
   layer_name  = "feedbacks-lambda-layer"
   description = "Mongodb node_modules layer"
@@ -37,21 +57,23 @@ resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
   source_code_hash    = filebase64sha256("${local.feedback_lambda_path}/feedback_layer.zip")
 }
 
+# Create queue
 resource "aws_sqs_queue" "feedback_ratings_queue" {
   name                        = "feedbackRatingsQueue.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
 }
 
+# Create lambda function
 module "feedback_queue_processor_lambda" {
   source = "./modules/aws_lambda"
 
   function_name = "FeedbackQueueProcessor"
-  handler       = "FeedbackQueueProcessor.index"
+  handler       = "index.handler"
   runtime       = "nodejs18.x"
   role_arn      = data.aws_iam_role.iam_role.arn
 
-  source_dir  = "${local.feedback_lambda_path}/FeedbackQueueProcessor"
+  source_dir  = "${local.feedback_lambda_path}/FeedbackQueueProcessor/index.js"
   output_path = "${path.module}/build/feedback_queue_processor_zip"
   layers      = [aws_lambda_layer_version.feedbacks_lambda_layer.arn]
 
@@ -62,6 +84,7 @@ module "feedback_queue_processor_lambda" {
   }
 }
 
+# Create Permission for lambda function invocation
 resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
   statement_id  = "AllowExecutionFromSQS"
   action        = "lambda:InvokeFunction"
@@ -70,12 +93,22 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
   function_name = module.feedback_queue_processor_lambda.lambda_function_name
 }
 
+# connect trigger feedback lambda function and sqs queue
+resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
+  event_source_arn = aws_sqs_queue.feedback_ratings_queue.arn
+  function_name    = module.feedback_queue_processor_lambda.arn
+  enabled          = true
+}
+
+
+# Create suffix hash
 resource "random_string" "hash" {
   length  = 5
   special = false
   upper   = false
 }
 
+# Create Elastic Beanstalk
 module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
