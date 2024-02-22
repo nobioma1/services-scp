@@ -50,9 +50,10 @@ export class FeedbacksService {
         rating,
         id: feedback._id.toString(),
         questionId: feedback.questionId,
+        timestamp: new Date().getTime(),
       };
 
-      await this.sqsService.sendMessage(messageBody, feedback.questionId);
+      await this.sqsService.sendMessage(messageBody);
     } catch (error) {
       console.error('Error adding rating to queue ');
     }
