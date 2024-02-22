@@ -70,10 +70,16 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
   function_name = module.feedback_queue_processor_lambda.lambda_function_name
 }
 
+resource "random_string" "random" {
+  length  = 5
+  special = false 
+  upper   = false 
+}
+
 module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
-  eb_application_name     = "feedbacks-ratings-app-${terraform.workspace}"
+  eb_application_name     = "feedbacks-ratings-${terraform.workspace}-${random_string.random.result}"
   eb_env_name             = lower("feedbacks-ratings-app-${terraform.workspace}")
   eb_env_instance_profile = "LabInstanceProfile"
   environment_variables = [
