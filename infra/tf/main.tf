@@ -70,7 +70,7 @@ resource "aws_lambda_permission" "allow_sqs_to_invoke_lambda" {
   function_name = module.feedback_queue_processor_lambda.lambda_function_name
 }
 
-resource "random_string" "random" {
+resource "random_string" "hash" {
   length  = 5
   special = false 
   upper   = false 
@@ -79,12 +79,21 @@ resource "random_string" "random" {
 module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
-  eb_application_name     = "feedbacks-ratings-${terraform.workspace}-${random_string.random.result}"
-  eb_env_name             = lower("feedbacks-ratings-app-${terraform.workspace}")
+  eb_application_name     = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
+  eb_env_name             = lower("getfeedbacksapp-${random_string.hash.result}")
   eb_env_instance_profile = "LabInstanceProfile"
   environment_variables = [
     { name = "AWS_REGION", value = "${var.aws_default_region}" },
     { name = "MONGO_URI", value = "${module.secrets.feedbacks_db_uri}" },
     { name = "SQS_QUEUE_URL", value = "${aws_sqs_queue.feedback_ratings_queue.url}" },
   ]
+}
+
+# write FEEDBACKS_EB_APPLICATION_NAME to secrets
+resource "doppler_secret" "FEEDBACKS_EB_APPLICATION_NAME" {
+  name       = "FEEDBACKS_EB_APPLICATION_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-elasticbeanstalk.eb_environment_name
+  depends_on = [module.aws-elasticbeanstalk]
 }

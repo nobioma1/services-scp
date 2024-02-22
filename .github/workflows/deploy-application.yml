@@ -1,0 +1,68 @@
+name: Deploy Application
+
+on: [workflow_dispatch]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  EB_ARTIFACTS_BUCKET: 'scp-services-build-artifacts'
+
+jobs:
+  feedbacks:
+    name: Build backend application
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: services/feedbacks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for changes in services/feedbacks
+        id: buildapifilter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            feedbacks:
+              - 'services/feedbacks/**'
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        if: steps.buildapifilter.outputs.feedbacks == 'true'
+        run: npm install
+      
+      - name: Run E2E Tests
+        if: steps.buildapifilter.outputs.feedbacks == 'true'
+        run: CI=true npm run test:e2e 
+
+      - name: Build and Generate deployment package
+        if: steps.buildapifilter.outputs.feedbacks == 'true'
+        run: |
+          npm run build
+          zip -r deploy.zip ./dist ./package.json -x '*.git*'
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create EB application version
+        if: steps.buildapifilter.outputs.feedbacks == 'true'
+        run: |
+          aws elasticbeanstalk create-application-version \
+          --application-name ${{ secrets.FEEDBACKS_EB_APPLICATION_NAME }} \
+          --version-label "${{ github.sha }}" \
+          --source-bundle S3Bucket="${{ env.EB_ARTIFACTS_BUCKET }}",S3Key="feedbacks-${{ github.sha }}.zip"
+
+      - name: Deploy new application version
+        if: steps.buildapifilter.outputs.feedbacks == 'true'
+        run: |
+          aws elasticbeanstalk update-environment \
+          --environment-name ${{ secrets.FEEDBACKS_EB_APPLICATION_NAME }} \
+          --version-label "${{ github.sha }}"

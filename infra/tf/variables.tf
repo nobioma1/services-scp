@@ -1,6 +1,6 @@
 variable "project_name" {
   type        = string
-  default     = "x22212973-app"
+  default     = "scp-services"
   description = "project name"
 }
 
