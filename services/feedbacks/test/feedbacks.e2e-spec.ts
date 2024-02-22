@@ -95,15 +95,12 @@ describe('FeedbacksController (e2e)', () => {
       })
       .then(() => {
         const sqsService = app.get(SQSService);
-        expect(sqsService.sendMessage).toHaveBeenCalledWith(
-          {
-            rating: 3,
-            id: expect.any(String),
-            questionId: feedbackRes.body.feedbackId,
-            timestamp: expect.any(Number),
-          },
-          feedbackRes.body.feedbackId,
-        );
+        expect(sqsService.sendMessage).toHaveBeenCalledWith({
+          rating: 3,
+          id: expect.any(String),
+          questionId: feedbackRes.body.feedbackId,
+          timestamp: expect.any(Number),
+        });
       });
   });
 
