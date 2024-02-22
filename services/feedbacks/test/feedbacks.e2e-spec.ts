@@ -100,6 +100,7 @@ describe('FeedbacksController (e2e)', () => {
             rating: 3,
             id: expect.any(String),
             questionId: feedbackRes.body.feedbackId,
+            timestamp: expect.any(Number),
           },
           feedbackRes.body.feedbackId,
         );
