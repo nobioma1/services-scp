@@ -37,7 +37,7 @@ export async function handler(event) {
               $inc: {
                 numberOfFeedbacks: obj.numberOfFeedbacks,
                 ...Object.keys(obj.ratings).reduce((acc, rate) => {
-                  acc[`rating.${rate}`] = obj.ratings[rate];
+                  acc[`ratings.${rate}`] = obj.ratings[rate];
                   return acc;
                 }, {}),
               },
