@@ -50,7 +50,7 @@ jobs:
         if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           npm run build
-          zip -r deploy.zip ./dist ./package.json -x '*.git*'
+          zip -r feedbacks-${{ github.sha }}.zip ./dist ./package.json -x '*.git*'
           aws s3 cp feedbacks-${{ github.sha }}.zip s3://${{env.EB_ARTIFACTS_BUCKET}}
 
       - name: Create EB application version
