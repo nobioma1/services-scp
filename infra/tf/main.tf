@@ -59,9 +59,7 @@ resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
 
 # Create queue
 resource "aws_sqs_queue" "feedback_ratings_queue" {
-  name                        = "feedbackRatingsQueue.fifo"
-  fifo_queue                  = true
-  content_based_deduplication = true
+  name                        = "feedbackRatingsQueue"
 }
 
 # Create lambda function
