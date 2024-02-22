@@ -94,6 +94,15 @@ resource "doppler_secret" "FEEDBACKS_EB_APPLICATION_NAME" {
   name       = "FEEDBACKS_EB_APPLICATION_NAME"
   project    = var.project_name
   config     = terraform.workspace
+  value      = module.aws-elasticbeanstalk.eb_application_name
+  depends_on = [module.aws-elasticbeanstalk]
+}
+
+# write FEEDBACKS_EB_ENVIRONMENT_NAME to secrets
+resource "doppler_secret" "FEEDBACKS_EB_ENVIRONMENT_NAME" {
+  name       = "FEEDBACKS_EB_ENVIRONMENT_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
   value      = module.aws-elasticbeanstalk.eb_environment_name
   depends_on = [module.aws-elasticbeanstalk]
 }

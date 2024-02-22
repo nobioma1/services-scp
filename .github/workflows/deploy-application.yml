@@ -65,5 +65,5 @@ jobs:
         if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           aws elasticbeanstalk update-environment \
-          --environment-name ${{ secrets.FEEDBACKS_EB_APPLICATION_NAME }} \
+          --environment-name ${{ secrets.FEEDBACKS_EB_ENVIRONMENT_NAME }} \
           --version-label "${{ github.sha }}"
