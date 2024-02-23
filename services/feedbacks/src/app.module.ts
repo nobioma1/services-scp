@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { AppController } from './app.controller';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { MongooseConfigService } from './config/mongoose-config.service';
@@ -20,7 +21,7 @@ import { FeedbacksModule } from './feedbacks/feedbacks.module';
     }),
     FeedbacksModule,
   ],
-  controllers: [FeedbacksController],
+  controllers: [AppController, FeedbacksController],
   providers: [],
 })
 export class AppModule {}

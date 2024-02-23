@@ -25,7 +25,7 @@ import { FeedbacksService } from './feedbacks.service';
 import { CommentResponseDto } from './dto/comment-response.dto';
 
 @ApiTags('Feedbacks')
-@Controller('feedbacks')
+@Controller('api/v1/feedbacks')
 export class FeedbacksController {
   constructor(private readonly feedbacksService: FeedbacksService) {}
 
@@ -87,8 +87,11 @@ export class FeedbacksController {
   @Get(':questionId')
   getFeedbacksRatings(
     @Question() feedback: FeedbackDocument,
-  ): FeedbackResponseDto {
-    return this.feedbacksService.getFeedbacksRatings(feedback);
+  ): Promise<FeedbackResponseDto> {
+    return this.feedbacksService.getFeedbacksRatings(
+      feedback.questionId,
+      feedback.ratings,
+    );
   }
 
   @UseGuards(IsQuestionGuard)

@@ -20,12 +20,12 @@ export class FeedbacksService {
 
   async createQuestion(
     createQuestionDto: CreateQuestionDto,
-  ): Promise<FeedbackDocument> {
+  ): Promise<Feedback> {
     const createdQuestionFeedback = new this.feedbackModel(createQuestionDto);
     return createdQuestionFeedback.save();
   }
 
-  async getQuestion(questionId: string): Promise<FeedbackDocument> {
+  async getQuestion(questionId: string): Promise<Feedback> {
     return this.feedbackModel.findOne({ questionId }).exec();
   }
 
@@ -61,11 +61,12 @@ export class FeedbacksService {
     return { feedbackId: feedback.questionId, comment, rating };
   }
 
-  getFeedbacksRatings(feedback: FeedbackDocument) {
+  async getFeedbacksRatings(
+    feedbackId: string,
+    ratings: Record<string, number>,
+  ) {
     // Cumulative Rating = (Sum of (Rating * Frequency)) / Total Number of Ratings
-    const { totalScore, totalRatings } = Object.entries(
-      feedback.ratings,
-    ).reduce(
+    const { totalScore, totalRatings } = Object.entries(ratings).reduce(
       (acc, [rating, frequency]) => {
         const ratingNum = Number(rating);
         acc.totalScore += ratingNum * frequency;
@@ -78,14 +79,17 @@ export class FeedbacksService {
     const cumValue = totalScore / totalRatings || 0;
 
     return {
-      feedbackId: feedback.questionId,
+      feedbackId,
       cumRating: cumValue.toFixed(2),
       numberOfFeedbacks: totalRatings,
-      rating: feedback.ratings,
+      rating: ratings,
     };
   }
 
-  getComments(feedback: FeedbackDocument): Promise<Comment[]> {
-    return this.commentModel.find({ feedback }).exec();
+  getComments(feedbackQuestion: Feedback): Promise<Comment[]> {
+    return this.commentModel
+      .find({ feedback: feedbackQuestion })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }
