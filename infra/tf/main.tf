@@ -46,7 +46,7 @@ resource "doppler_secret" "BUILD_ARTIFACTS_BUCKET_NAME" {
 }
 
 
-# Feedbacks/Ratings Service
+# Feedbacks/Reviews Service
 # Create lambda function layer
 resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
   layer_name  = "feedbacks-lambda-layer"
