@@ -8,6 +8,14 @@ services:
       - /app/node_modules
     ports:
       - '3000:3000'
+    depends_on:
+      - events-service
+      - tickets-service
+      - feedbacks-service
+    environment:
+      EVENTS_SERVICE_URI: http://events-service:8001/api/v1
+      TICKETS_SERVICE_URI: http://events-service:8002/api/v1
+      FEEDBACKS_SERVICE_URI: http://events-service:8003/api/v1
 
   events-service:
     build: ./services/events
@@ -18,8 +26,18 @@ services:
       - '8001:8001'
     environment:
       PORT: 8001
-      AWS_REGION: us-east-1
       MONGO_URI: ${EVENTS_MONGO_URI}
+
+  tickets-service:
+    build: ./services/tickets
+    volumes:
+      - ./services/tickets:/app/
+      - /app/node_modules
+    ports:
+      - '8002:8002'
+    environment:
+      PORT: 8002
+      MONGO_URI: ${TICKETS_MONGO_URI}
 
   feedbacks-service:
     build: ./services/feedbacks
