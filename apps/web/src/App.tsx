@@ -1,35 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { ChakraProvider, Divider, Stack, extendTheme } from '@chakra-ui/react';
 
-function App() {
-  const [count, setCount] = useState(0)
+import Header from './components/header/Header';
+import EventsList from './components/events/EventsList';
+import Feedback from './components/feedback/Feedback';
+import Reviews from './components/feedback/Reviews';
 
+const theme = extendTheme({
+  styles: {
+    global: {
+      'html, body, #root': {
+        height: '100%',
+      },
+    },
+  },
+});
+
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <ChakraProvider theme={theme}>
+      <Header />
+      <Stack
+        pt={4}
+        width="100%"
+        maxW="980px"
+        margin="0 auto"
+        spacing={4}
+        px={{ base: 2, lg: 0 }}
+      >
+        <EventsList />
+        <Divider />
+        <Reviews />
+      </Stack>
+      <Feedback />
+    </ChakraProvider>
+  );
+};
 
-export default App
+export default App;
