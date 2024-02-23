@@ -11,7 +11,7 @@ export class FeedbackResponseDto {
     example: 4.5,
     description: 'Cumulative average of ratings',
   })
-  cumRating: number;
+  cumRating: string;
 
   @ApiProperty({
     example: 12,
