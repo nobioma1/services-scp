@@ -1,13 +1,23 @@
 {
   "collection": "@nestjs/schematics",
-  "sourceRoot": "services/feedbacks/src",
+  "sourceRoot": "services/events/src",
   "monorepo": true,
-  "root": "services/feedbacks",
+  "root": "services/events",
   "compilerOptions": {
     "webpack": true,
-    "tsConfigPath": "services/feedbacks/tsconfig.json"
+    "tsConfigPath": "services/events/tsconfig.json"
   },
   "projects": {
+    "events": {
+      "type": "application",
+      "root": "services/events",
+      "entryFile": "main",
+      "sourceRoot": "services/events/src",
+      "compilerOptions": {
+        "deleteOutDir": true,
+        "tsConfigPath": "services/events/tsconfig.json"
+      }
+    },
     "feedbacks": {
       "type": "application",
       "root": "services/feedbacks",

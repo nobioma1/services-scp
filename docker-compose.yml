@@ -9,6 +9,18 @@ services:
     ports:
       - '3000:3000'
 
+  events-service:
+    build: ./services/events
+    volumes:
+      - ./services/events:/app/
+      - /app/node_modules
+    ports:
+      - '8001:8001'
+    environment:
+      PORT: 8001
+      AWS_REGION: us-east-1
+      MONGO_URI: ${EVENTS_MONGO_URI}
+
   feedbacks-service:
     build: ./services/feedbacks
     volumes:
@@ -21,6 +33,3 @@ services:
       AWS_REGION: us-east-1
       MONGO_URI: ${FEEDBACKS_MONGO_URI}
       SQS_QUEUE_URL: ${FEEDBACKS_SQS_QUEUE_URL}
-
-volumes:
-  db-data:
