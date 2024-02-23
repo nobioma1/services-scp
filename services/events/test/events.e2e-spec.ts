@@ -52,7 +52,20 @@ describe('EventsController (e2e)', () => {
       .expect(400);
   });
 
-  it('(GET) /api/v1/events/ - should get all events', async () => {
+  it('(GET) /api/v1/events/:eventId - Should get event by Id', async () => {
+    const eventRes = await request(app.getHttpServer())
+      .post('/api/v1/events')
+      .send(TEST_DATA);
+
+    return request(app.getHttpServer())
+      .get(`/api/v1/events/${eventRes.body.eventId}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.eventId).toEqual(eventRes.body.eventId);
+      });
+  });
+
+  it('(GET) /api/v1/events - should get all events', async () => {
     const req = request(app.getHttpServer());
 
     const count = [1, 2, 3, 4, 5];

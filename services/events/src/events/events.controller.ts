@@ -16,7 +16,7 @@ export class EventsController {
   }
 
   @Get()
-  getComments() {
+  getEvents() {
     return this.eventsService.getEvents();
   }
 
