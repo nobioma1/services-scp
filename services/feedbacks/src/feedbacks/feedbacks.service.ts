@@ -75,9 +75,11 @@ export class FeedbacksService {
       { totalScore: 0, totalRatings: 0 },
     );
 
+    const cumValue = totalScore / totalRatings || 0;
+
     return {
       feedbackId: feedback.questionId,
-      cumRating: totalScore / totalRatings || 0,
+      cumRating: cumValue.toFixed(2),
       numberOfFeedbacks: totalRatings,
       rating: feedback.ratings,
     };
