@@ -76,7 +76,11 @@ export class FeedbacksController {
   }
 
   @UseGuards(IsQuestionGuard)
-  @ApiResponse({ status: HttpStatus.OK, description: 'Ok' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Ok',
+    type: FeedbackResponseDto,
+  })
   @ApiOperation({ summary: 'Get a feedback cumulative and count' })
   @ApiParam({
     name: 'questionId',
@@ -88,10 +92,7 @@ export class FeedbacksController {
   getFeedbacksRatings(
     @Question() feedback: FeedbackDocument,
   ): Promise<FeedbackResponseDto> {
-    return this.feedbacksService.getFeedbacksRatings(
-      feedback.questionId,
-      feedback.ratings,
-    );
+    return this.feedbacksService.getFeedbacksRatings(feedback);
   }
 
   @UseGuards(IsQuestionGuard)

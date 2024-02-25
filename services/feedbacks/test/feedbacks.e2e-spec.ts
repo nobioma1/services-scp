@@ -122,15 +122,16 @@ describe('FeedbacksController (e2e)', () => {
     const TEST_QUESTION = 'Rate question?';
 
     const req = request(app.getHttpServer());
-    const feedbackRes = await req
+    const fbRes = await req
       .post('/api/v1/feedbacks')
       .send({ question: TEST_QUESTION });
 
     return req
-      .get(`/api/v1/feedbacks/${feedbackRes.body.feedbackId}`)
+      .get(`/api/v1/feedbacks/${fbRes.body.feedbackId}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body.feedbackId).toEqual(feedbackRes.body.feedbackId);
+        expect(res.body.feedback.feedbackId).toEqual(fbRes.body.feedbackId);
+        expect(res.body.feedback.question).toEqual(TEST_QUESTION);
         expect(res.body.cumRating).toBeDefined();
         expect(res.body.numberOfFeedbacks).toBeDefined();
         expect(res.body.rating).toBeDefined();

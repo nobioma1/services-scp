@@ -18,10 +18,7 @@ export class AppController {
         await this.feedbacksService.getQuestion(QUESTION_ID);
       const [comments, ratings] = await Promise.all([
         this.feedbacksService.getComments(feedbackQuestion),
-        this.feedbacksService.getFeedbacksRatings(
-          QUESTION_ID,
-          feedbackQuestion.ratings,
-        ),
+        this.feedbacksService.getFeedbacksRatings(feedbackQuestion),
       ]);
 
       return {

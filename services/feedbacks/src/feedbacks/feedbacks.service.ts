@@ -61,12 +61,11 @@ export class FeedbacksService {
     return { feedbackId: feedback.questionId, comment, rating };
   }
 
-  async getFeedbacksRatings(
-    feedbackId: string,
-    ratings: Record<string, number>,
-  ) {
+  async getFeedbacksRatings(feedback: Feedback) {
     // Cumulative Rating = (Sum of (Rating * Frequency)) / Total Number of Ratings
-    const { totalScore, totalRatings } = Object.entries(ratings).reduce(
+    const { totalScore, totalRatings } = Object.entries(
+      feedback.ratings,
+    ).reduce(
       (acc, [rating, frequency]) => {
         const ratingNum = Number(rating);
         acc.totalScore += ratingNum * frequency;
@@ -79,10 +78,13 @@ export class FeedbacksService {
     const cumValue = totalScore / totalRatings || 0;
 
     return {
-      feedbackId,
+      feedback: {
+        feedbackId: feedback.questionId,
+        question: feedback.question,
+      },
       cumRating: cumValue.toFixed(2),
       numberOfFeedbacks: totalRatings,
-      rating: ratings,
+      rating: feedback.ratings,
     };
   }
 
