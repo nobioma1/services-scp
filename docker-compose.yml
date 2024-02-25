@@ -13,9 +13,9 @@ services:
       - tickets-service
       - feedbacks-service
     environment:
-      EVENTS_SERVICE_URI: http://events-service:8001/api/v1
-      TICKETS_SERVICE_URI: http://events-service:8002/api/v1
-      FEEDBACKS_SERVICE_URI: http://events-service:8003/api/v1
+      VITE_EVENTS_SERVICE_URI: http://localhost:8001/api/v1
+      VITE_TICKETS_SERVICE_URI: http://localhost:8002/api/v1
+      VITE_FEEDBACKS_SERVICE_URI: http://localhost:8003/api/v1
 
   events-service:
     build: ./services/events
