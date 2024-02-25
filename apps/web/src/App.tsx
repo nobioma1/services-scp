@@ -6,6 +6,18 @@ import Reviews from './components/feedback/Reviews';
 import Events from './components/events/Events';
 
 const theme = extendTheme({
+  components: {
+    Input: {
+      defaultProps: {
+        focusBorderColor: 'purple.400',
+      },
+    },
+    Textarea: {
+      defaultProps: {
+        focusBorderColor: 'purple.400',
+      },
+    },
+  },
   styles: {
     global: {
       'html, body, #root': {
@@ -27,6 +39,8 @@ const App = () => {
         maxW="980px"
         margin="0 auto"
         px={{ base: 2, lg: 0 }}
+        pb={10}
+        marginTop="60px"
       >
         <Events />
         <Divider />

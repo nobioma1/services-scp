@@ -9,8 +9,10 @@ const Header = () => {
       justifyContent="center"
       borderBottomWidth={1}
       bg="white"
-      position="sticky"
+      position="fixed"
       top={0}
+      left={0}
+      zIndex={999}
     >
       <Heading fontWeight="semibold" fontSize="xl" color="purple.600">
         Open Events

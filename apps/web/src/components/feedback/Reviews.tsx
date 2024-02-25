@@ -1,7 +1,7 @@
-import axios from 'axios';
 import { Box, Stack, Text, Wrap, WrapItem } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 
+import feedbacksAPI from '../../api/feedbacks-api';
 import envConfig from '../../config/env-config';
 import ReviewItem, { Review } from './ReviewItem';
 
@@ -11,9 +11,7 @@ const Reviews = () => {
   const { isLoading, data: reviews = [] } = useQuery<Review[]>({
     queryKey: ['feedbacks-comments', QUESTION_ID],
     queryFn: async () => {
-      const res = await axios.get(
-        `${envConfig.FEEDBACKS_SERVICE_API_URL}/feedbacks/${QUESTION_ID}/comments`
-      );
+      const res = await feedbacksAPI.get(`/feedbacks/${QUESTION_ID}/comments`);
       return res.data;
     },
   });

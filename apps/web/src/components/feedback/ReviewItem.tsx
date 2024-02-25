@@ -14,8 +14,7 @@ const ReviewItem = (review: Review) => {
   return (
     <Stack bg="white" p={3} borderRadius="md">
       <Text color="gray.700" fontSize="14px">
-        Simplifies complex tasks with its clean layout and straightforward
-        instructions.
+        {review.comment}
       </Text>
       <HStack>
         {Array(5)

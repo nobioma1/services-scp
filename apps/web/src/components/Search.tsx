@@ -25,7 +25,6 @@ const Search = ({ handleChange }: SearchProps) => {
         bg="white"
         type="text"
         height="100%"
-        focusBorderColor="purple.400"
         placeholder="Search public events"
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
