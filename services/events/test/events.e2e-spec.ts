@@ -9,7 +9,7 @@ const TEST_DATA = {
   name: 'Test Event Name',
   description: 'This is test',
   date: new Date().toISOString(),
-  createdBy: 'Test User',
+  hostName: 'Test User',
   location: {
     address: '127.0.0.1',
     state: 'Lagos',

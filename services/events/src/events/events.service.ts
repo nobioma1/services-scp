@@ -10,7 +10,10 @@ export class EventsService {
   constructor(@InjectModel(Event.name) private eventModel: Model<Event>) {}
 
   createEvent(createEventDto: CreateEventDto): Promise<EventDocument> {
-    const createdEvent = new this.eventModel(createEventDto);
+    const createdEvent = new this.eventModel({
+      ...createEventDto,
+      createdBy: createEventDto.hostName,
+    });
     return createdEvent.save();
   }
 
@@ -19,6 +22,6 @@ export class EventsService {
   }
 
   getEvents(): Promise<Event[]> {
-    return this.eventModel.find({}).exec();
+    return this.eventModel.find({}).sort({ createdAt: -1 }).exec();
   }
 }

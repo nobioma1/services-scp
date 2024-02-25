@@ -17,9 +17,11 @@ class LocationDto {
   city: string;
 
   @IsString()
+  @IsOptional()
   state: string;
 
   @IsString()
+  @IsOptional()
   country: string;
 }
 
@@ -29,7 +31,7 @@ export class CreateEventDto {
   name: string;
 
   @IsOptional()
-  @MaxLength(250)
+  @MaxLength(500)
   description: string;
 
   @IsOptional()
@@ -41,5 +43,5 @@ export class CreateEventDto {
   location: LocationDto;
 
   @IsNotEmpty()
-  createdBy: string;
+  hostName: string;
 }
