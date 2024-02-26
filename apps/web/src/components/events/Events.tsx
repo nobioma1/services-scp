@@ -9,7 +9,7 @@ import {
 } from '@chakra-ui/react';
 import { FaGlobeEurope } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import eventsAPI from '../../api/events-api';
 import Search from '../Search';
@@ -17,10 +17,39 @@ import EventsList from './EventsList';
 import { Event } from './EventItem';
 import NewEventModal from './NewEventModal';
 import { CreateEventButton } from './CreateEventButton';
+import NewTicketModal from '../tickets/NewTicketModal';
+
+const updateUrlParam = (key: string, value: string) => {
+  const url = new URL(window.location.href);
+  if (value) {
+    url.searchParams.set(key, value);
+  } else {
+    url.searchParams.delete(key);
+  }
+  window.history.pushState({ path: url.href }, '', url.href);
+};
+
+const readUrlParam = (key: string) => {
+  const url = new URL(window.location.href);
+  return url.searchParams.get(key);
+};
 
 const Events = () => {
   const [searchText, setSearchText] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { isOpen, onClose, onOpen } = useDisclosure();
+
+  const handleSearchTextChange = (val: string) => {
+    if (searchText !== val) {
+      setSearchText(val);
+      updateUrlParam('search', val);
+    }
+  };
+
+  useEffect(() => {
+    const value = readUrlParam('search');
+    if (value) setSearchText(value);
+  }, []);
 
   const { isLoading, data: events = [] } = useQuery<Event[]>({
     queryKey: ['events'],
@@ -39,7 +68,7 @@ const Events = () => {
       <Stack spacing={5}>
         <Stack spacing={6}>
           <HStack spacing={6} height="50px">
-            <Search handleChange={setSearchText} />
+            <Search handleChange={handleSearchTextChange} />
             <CreateEventButton onClickNewEvent={onOpen} />
           </HStack>
           <HStack
@@ -69,11 +98,18 @@ const Events = () => {
           {isLoading ? (
             <Spinner color="purple.500" />
           ) : (
-            <EventsList events={filteredEvents} />
+            <EventsList events={filteredEvents} setEvent={setSelectedEvent} />
           )}
         </Flex>
       </Stack>
       <NewEventModal isOpen={isOpen} onClose={onClose} />
+      {selectedEvent && (
+        <NewTicketModal
+          isOpen
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </>
   );
 };

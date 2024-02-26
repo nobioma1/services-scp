@@ -28,6 +28,10 @@ const theme = extendTheme({
   },
 });
 
+// change search to update url query parameter
+// add modal for user to RSVP or order ticket, click on event
+// when event is shared use url shortener - shorten host/?search=<event name>
+
 const App = () => {
   return (
     <ChakraProvider theme={theme}>

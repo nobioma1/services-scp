@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Flex,
   HStack,
   IconButton,
@@ -13,6 +14,7 @@ import { MdOutlineLocationOn } from 'react-icons/md';
 
 export interface Event {
   id: string;
+  eventId: string;
   name: string;
   description: string;
   location: {
@@ -22,8 +24,17 @@ export interface Event {
   date: Date;
 }
 
-const EventItem = ({ name, description, location, date }: Event) => {
+const EventItem = ({
+  setEvent,
+  ...event
+}: Event & { setEvent(event: Event): void }) => {
+  const { name, description, location, date } = event;
+
   const eventDate = dayjs(new Date(date));
+
+  const handleGetTicketClick = () => {
+    setEvent(event);
+  };
 
   return (
     <Stack
@@ -81,10 +92,19 @@ const EventItem = ({ name, description, location, date }: Event) => {
           {description}
         </Text>
       </Box>
-      <Flex justifyContent="flex-end">
-        <Tooltip label="Copy link" aria-label="Copy link">
+      <Flex justifyContent="space-between" alignItems="center">
+        <Tooltip label="Share link" aria-label="Share link">
           <IconButton variant="ghost" icon={<FaShare />} aria-label="share" />
         </Tooltip>
+
+        <Button
+          size="sm"
+          colorScheme="purple"
+          variant="outline"
+          onClick={handleGetTicketClick}
+        >
+          Get Ticket
+        </Button>
       </Flex>
     </Stack>
   );

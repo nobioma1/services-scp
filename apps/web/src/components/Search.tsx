@@ -14,7 +14,8 @@ const Search = ({ handleChange }: SearchProps) => {
 
   useEffect(() => {
     handleChange(debouncedSearchText);
-  }, [debouncedSearchText, handleChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchText]);
 
   return (
     <InputGroup height="100%">

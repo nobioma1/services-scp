@@ -27,9 +27,9 @@ const Reviews = () => {
       </Text>
       <Wrap spacing="20px">
         {reviews.map((review) => (
-          <WrapItem>
+          <WrapItem key={review.id}>
             <Box width="320px">
-              <ReviewItem key={review.id} {...review} />
+              <ReviewItem {...review} />
             </Box>
           </WrapItem>
         ))}
