@@ -45,6 +45,113 @@ resource "doppler_secret" "BUILD_ARTIFACTS_BUCKET_NAME" {
   depends_on = [aws_s3_bucket.build_artifacts_bucket]
 }
 
+# Create random strings for suffix to prevent conflict 
+resource "random_string" "hash" {
+  length  = 5
+  special = false
+  upper   = false
+}
+
+# --- Frontend Static Website ---
+module "s3_static_website" {
+  source = "./modules/s3-static-website"
+
+  bucket_name   = "open-events-${random_string.hash.result}"
+  bucket_region = var.aws_default_region
+}
+
+# write FRONTEND_BUCKET_NAME to secrets
+resource "doppler_secret" "FRONTEND_BUCKET_NAME" {
+  name       = "FRONTEND_BUCKET_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = "open-events-${random_string.hash.result}"
+  depends_on = [module.s3_static_website]
+}
+
+# --- Events Service ---
+# Create Elastic Beanstalk for Events service
+module "aws-events-elasticbeanstalk" {
+  source = "./modules/aws-eb"
+
+  eb_application_name        = "events-${terraform.workspace}-${random_string.hash.result}"
+  eb_env_name                = lower("events-${random_string.hash.result}")
+  eb_env_instance_profile    = "LabInstanceProfile"
+  eb_environment_type        = "LoadBalanced"
+  eb_env_solution_stack_name = "64bit Amazon Linux 2023 v6.1.1 running Node.js 20"
+  environment_variables = [
+    { name = "MONGO_URI", value = "${module.secrets.events_db_uri}" },
+  ]
+}
+
+# write EVENTS_EB_APPLICATION_NAME to secrets
+resource "doppler_secret" "EVENTS_EB_APPLICATION_NAME" {
+  name       = "EVENTS_EB_APPLICATION_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-events-elasticbeanstalk.eb_application_name
+  depends_on = [module.aws-events-elasticbeanstalk]
+}
+
+# write EVENTS_EB_ENVIRONMENT_NAME to secrets
+resource "doppler_secret" "EVENTS_EB_ENVIRONMENT_NAME" {
+  name       = "EVENTS_EB_ENVIRONMENT_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-events-elasticbeanstalk.eb_environment_name
+  depends_on = [module.aws-events-elasticbeanstalk]
+}
+
+# write EVENTS_DOMAIN to secrets
+resource "doppler_secret" "EVENTS_DOMAIN" {
+  name       = "VITE_EVENTS_SERVICE_DOMAIN"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-events-elasticbeanstalk.eb_environment_domain
+  depends_on = [module.aws-events-elasticbeanstalk]
+}
+
+# --- Tickets Service ---
+# Create Elastic Beanstalk for Tickets service
+module "aws-tickets-elasticbeanstalk" {
+  source = "./modules/aws-eb"
+
+  eb_application_name        = "tickets-${terraform.workspace}-${random_string.hash.result}"
+  eb_env_name                = lower("tickets-${random_string.hash.result}")
+  eb_env_instance_profile    = "LabInstanceProfile"
+  eb_environment_type        = "LoadBalanced"
+  eb_env_solution_stack_name = "64bit Amazon Linux 2023 v6.1.1 running Node.js 20"
+  environment_variables = [
+    { name = "MONGO_URI", value = "${module.secrets.tickets_db_uri}" },
+  ]
+}
+
+# write TICKETS_EB_APPLICATION_NAME to secrets
+resource "doppler_secret" "TICKETS_EB_APPLICATION_NAME" {
+  name       = "TICKETS_EB_APPLICATION_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-tickets-elasticbeanstalk.eb_application_name
+  depends_on = [module.aws-tickets-elasticbeanstalk]
+}
+
+# write TICKETS_EB_ENVIRONMENT_NAME to secrets
+resource "doppler_secret" "TICKETS_EB_ENVIRONMENT_NAME" {
+  name       = "TICKETS_EB_ENVIRONMENT_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-tickets-elasticbeanstalk.eb_environment_name
+  depends_on = [module.aws-tickets-elasticbeanstalk]
+}
+
+# write TICKETS_DOMAIN to secrets
+resource "doppler_secret" "TICKETS_DOMAIN" {
+  name       = "VITE_TICKETS_SERVICE_DOMAIN"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-tickets-elasticbeanstalk.eb_environment_domain
+  depends_on = [module.aws-tickets-elasticbeanstalk]
+}
 
 # --- Feedbacks/Reviews Service ---
 # Create lambda function layer
@@ -99,15 +206,8 @@ resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
 }
 
 
-# Create random string for feedbacks suffix
-resource "random_string" "hash" {
-  length  = 5
-  special = false
-  upper   = false
-}
-
 # Create Elastic Beanstalk for Feedbacks service
-module "aws-elasticbeanstalk" {
+module "aws-feedbacks-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
   eb_application_name        = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
@@ -127,8 +227,8 @@ resource "doppler_secret" "FEEDBACKS_EB_APPLICATION_NAME" {
   name       = "FEEDBACKS_EB_APPLICATION_NAME"
   project    = var.project_name
   config     = terraform.workspace
-  value      = module.aws-elasticbeanstalk.eb_application_name
-  depends_on = [module.aws-elasticbeanstalk]
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_application_name
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
 }
 
 # write FEEDBACKS_EB_ENVIRONMENT_NAME to secrets
@@ -136,6 +236,15 @@ resource "doppler_secret" "FEEDBACKS_EB_ENVIRONMENT_NAME" {
   name       = "FEEDBACKS_EB_ENVIRONMENT_NAME"
   project    = var.project_name
   config     = terraform.workspace
-  value      = module.aws-elasticbeanstalk.eb_environment_name
-  depends_on = [module.aws-elasticbeanstalk]
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_name
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
+}
+
+# write FEEDBACKS_DOMAIN to secrets
+resource "doppler_secret" "FEEDBACKS_DOMAIN" {
+  name       = "VITE_FEEDBACKS_SERVICE_DOMAIN"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_domain
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
 }
