@@ -5,19 +5,16 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
-  ModalFooter,
-  Button,
   Stack,
   Text,
+  Flex,
+  ScaleFade,
 } from '@chakra-ui/react';
-import { useRef, useState } from 'react';
-import * as Yup from 'yup';
-import { useFormik } from 'formik';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { IoIosCheckmarkCircleOutline } from 'react-icons/io';
 
-import ticketsAPI from '../../api/tickets-api';
 import { Event } from '../events/EventItem';
-import Input from '../Input';
+import NewTicketForm from './NewTicketForm';
 
 interface NewTicketModalProps {
   onClose(): void;
@@ -26,57 +23,56 @@ interface NewTicketModalProps {
   finalRef?: React.MutableRefObject<null>;
 }
 
-interface FormValues {
-  name: string;
+interface NewTicketSuccessProps {
+  event: Event;
+  referenceId: string;
 }
 
-const ticketSchema = Yup.object().shape({
-  name: Yup.string().required('Name is required'),
-});
+const NewTicketSuccess = ({ event, referenceId }: NewTicketSuccessProps) => {
+  return (
+    <>
+      <ModalHeader>
+        {event.name}
+        <Text fontSize="sm" color="gray.600">
+          Save your ticket ID.
+        </Text>
+      </ModalHeader>
 
-const NewTicketModal = ({
-  isOpen,
-  onClose,
-  finalRef,
-  event,
-}: NewTicketModalProps) => {
-  const initialRef = useRef(null);
-  const queryClient = useQueryClient();
+      <ModalBody pb={6}>
+        <ScaleFade initialScale={0.9} in={true}>
+          <Stack spacing={3}>
+            <Stack alignItems="center" spacing={3}>
+              <IoIosCheckmarkCircleOutline size={150} color="green" />
+              <Text fontSize="xl" fontWeight="bold">
+                Ticket Order Complete
+              </Text>
+              <Text fontSize="md" fontWeight="bold">
+                Please save your ticket ID
+              </Text>
+            </Stack>
+            <Flex
+              bg="gray.200"
+              alignItems="center"
+              height="50px"
+              justifyContent="center"
+              borderRadius="md"
+            >
+              <Text fontWeight="bold" fontSize="24px">
+                {referenceId}
+              </Text>
+            </Flex>
+          </Stack>
+        </ScaleFade>
+      </ModalBody>
+    </>
+  );
+};
+
+const NewTicketModal = ({ isOpen, onClose, event }: NewTicketModalProps) => {
   const [referenceId, setReferenceId] = useState('');
-
-  const mutation = useMutation({
-    onSuccess: (ticket) => {
-      setReferenceId(ticket.data.ticketId);
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-    },
-    mutationFn: (values: FormValues) => {
-      return ticketsAPI.post(`/tickets`, {
-        eventId: event.eventId,
-        ...values,
-      });
-    },
-  });
-
-  const { handleSubmit, handleChange, handleBlur, values, ...formik } =
-    useFormik({
-      initialValues: {
-        name: '',
-      },
-      validationSchema: ticketSchema,
-      onSubmit: async (values) => {
-        try {
-          await mutation.mutateAsync(values);
-          formik.resetForm();
-        } catch (error) {
-          console.error(error);
-        }
-      },
-    });
 
   return (
     <Modal
-      initialFocusRef={initialRef}
-      finalFocusRef={finalRef}
       isOpen={isOpen}
       onClose={onClose}
       closeOnEsc={false}
@@ -85,47 +81,25 @@ const NewTicketModal = ({
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          {event.name}
-          <Text fontSize="sm" color="gray.600">
-            Save your spot by registering and getting your ticket ID.
-          </Text>
-        </ModalHeader>
-
         <ModalCloseButton />
-        <form onSubmit={handleSubmit}>
-          <ModalBody pb={6}>
-            <Stack spacing={3}>
-              <Input
-                label="Name"
-                name="name"
-                ref={initialRef}
-                placeholder="eg. John Doe..."
-                onChange={handleChange}
-                onBlur={handleBlur}
-                value={values.name}
-                errorText={
-                  formik.touched.name && formik.errors.name
-                    ? formik.errors.name
-                    : ''
-                }
-              />
-            </Stack>
-          </ModalBody>
+        {!referenceId && (
+          <NewTicketForm
+            event={event}
+            onClose={onClose}
+            onSuccess={setReferenceId}
+          />
+        )}
 
-          <ModalFooter>
-            <Button onClick={onClose} mr={3}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              colorScheme="purple"
-              isLoading={mutation.status === 'pending'}
-            >
-              Get My Ticket
-            </Button>
-          </ModalFooter>
-        </form>
+        {referenceId && (
+          <NewTicketSuccess
+            event={event}
+            referenceId={referenceId
+              .split('-')
+              .slice(0, 2)
+              .join('-')
+              .toUpperCase()}
+          />
+        )}
       </ModalContent>
     </Modal>
   );

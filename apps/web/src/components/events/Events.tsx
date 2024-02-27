@@ -102,7 +102,9 @@ const Events = () => {
           )}
         </Flex>
       </Stack>
+
       <NewEventModal isOpen={isOpen} onClose={onClose} />
+
       {selectedEvent && (
         <NewTicketModal
           isOpen
