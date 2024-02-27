@@ -46,7 +46,7 @@ resource "doppler_secret" "BUILD_ARTIFACTS_BUCKET_NAME" {
 }
 
 
-# Feedbacks/Reviews Service
+# --- Feedbacks/Reviews Service ---
 # Create lambda function layer
 resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
   layer_name  = "feedbacks-lambda-layer"
@@ -59,10 +59,10 @@ resource "aws_lambda_layer_version" "feedbacks_lambda_layer" {
 
 # Create queue
 resource "aws_sqs_queue" "feedback_ratings_queue" {
-  name                        = "feedbackRatingsQueue"
+  name = "feedbackRatingsQueue"
 }
 
-# Create lambda function
+# Create lambda function for feedback queue processor
 module "feedback_queue_processor_lambda" {
   source = "./modules/aws_lambda"
 
@@ -99,20 +99,22 @@ resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
 }
 
 
-# Create suffix hash
+# Create random string for feedbacks suffix
 resource "random_string" "hash" {
   length  = 5
   special = false
   upper   = false
 }
 
-# Create Elastic Beanstalk
+# Create Elastic Beanstalk for Feedbacks service
 module "aws-elasticbeanstalk" {
   source = "./modules/aws-eb"
 
-  eb_application_name     = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
-  eb_env_name             = lower("getfeedbacksapp-${random_string.hash.result}")
-  eb_env_instance_profile = "LabInstanceProfile"
+  eb_application_name        = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
+  eb_env_name                = lower("getfeedbacksapp-${random_string.hash.result}")
+  eb_env_instance_profile    = "LabInstanceProfile"
+  eb_environment_type        = "LoadBalanced"
+  eb_env_solution_stack_name = "64bit Amazon Linux 2023 v6.1.1 running Node.js 20"
   environment_variables = [
     { name = "AWS_REGION", value = "${var.aws_default_region}" },
     { name = "MONGO_URI", value = "${module.secrets.feedbacks_db_uri}" },
