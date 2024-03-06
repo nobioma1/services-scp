@@ -8,11 +8,14 @@ import {
   Text,
   Tooltip,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { FaShare } from 'react-icons/fa6';
 import { MdOutlineLocationOn } from 'react-icons/md';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { getShareURL } from '../../api/url-shortener-api';
 import ShareModal from '../ShareModal';
 
 export interface Event {
@@ -31,13 +34,47 @@ const EventItem = ({
   setEvent,
   ...event
 }: Event & { setEvent(event: Event): void }) => {
+  const queryClient = useQueryClient();
   const { isOpen, onClose, onOpen } = useDisclosure();
+  const toast = useToast();
+
   const { name, description, location, date } = event;
 
   const eventDate = dayjs(new Date(date));
 
   const handleGetTicketClick = () => {
     setEvent(event);
+  };
+
+  const url = `${window.location.origin}?search=${encodeURIComponent(event.name)}`;
+
+  const mutation = useMutation({
+    onError: () => {
+      toast({
+        title: 'Unable to create share url',
+        description:
+          'Something went wrong creating share url, please try again later!',
+        duration: 5000,
+        isClosable: true,
+        status: 'error',
+        position: 'top-right',
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData([url], () => data);
+      onOpen();
+    },
+    mutationFn: getShareURL,
+  });
+
+  const handleOnShareLink = () => {
+    const queryData = queryClient.getQueryData([url]);
+
+    if (!queryData) {
+      mutation.mutate(url);
+    } else {
+      onOpen();
+    }
   };
 
   return (
@@ -100,10 +137,11 @@ const EventItem = ({
         <Flex justifyContent="space-between" alignItems="center">
           <Tooltip label="Share link" aria-label="Share link">
             <IconButton
-              onClick={onOpen}
               variant="ghost"
               icon={<FaShare />}
               aria-label="share"
+              onClick={handleOnShareLink}
+              isLoading={mutation.status === 'pending'}
             />
           </Tooltip>
 
@@ -117,7 +155,9 @@ const EventItem = ({
           </Button>
         </Flex>
       </Stack>
-      <ShareModal event={event} isOpen={isOpen} onClose={onClose} />
+      {isOpen && (
+        <ShareModal isOpen url={url} eventName={name} onClose={onClose} />
+      )}
     </>
   );
 };

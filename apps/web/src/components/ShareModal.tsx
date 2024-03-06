@@ -12,17 +12,24 @@ import {
   Spinner,
 } from '@chakra-ui/react';
 import { IoIosCheckmarkCircleOutline } from 'react-icons/io';
+import { useQuery } from '@tanstack/react-query';
 
-import { Event } from './events/EventItem';
+import { getShareURL } from '../api/url-shortener-api';
 
 interface ShareModalProps {
   onClose(): void;
   isOpen: boolean;
-  event: Event;
+  url: string;
+  eventName: string;
 }
 
-const ShareModal = ({ isOpen, onClose, event }: ShareModalProps) => {
-  const url = '';
+const ShareModal = ({ isOpen, onClose, url, eventName }: ShareModalProps) => {
+  const { data, isLoading } = useQuery({
+    queryKey: [url],
+    queryFn: async () => {
+      return getShareURL(url);
+    },
+  });
 
   return (
     <Modal
@@ -36,7 +43,7 @@ const ShareModal = ({ isOpen, onClose, event }: ShareModalProps) => {
       <ModalContent>
         <ModalCloseButton />
         <ModalHeader>
-          {event.name}
+          {eventName}
           <Text fontSize="sm" color="gray.600">
             Share event with your friends
           </Text>
@@ -58,11 +65,11 @@ const ShareModal = ({ isOpen, onClose, event }: ShareModalProps) => {
                 justifyContent="center"
                 borderRadius="md"
               >
-                {!url ? (
+                {isLoading ? (
                   <Spinner />
                 ) : (
-                  <Text fontWeight="bold" fontSize="24px">
-                    url
+                  <Text color="dodgerblue" textAlign="center" fontSize="24px">
+                    {data.shortenedURL}
                   </Text>
                 )}
               </Flex>
