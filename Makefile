@@ -1,6 +1,10 @@
 # Define the path to the Terraform directory
 TERRAFORM_DIR := infra/tf
 
+ROOT_DIR := $(shell pwd)
+
+SERVICES_LAYER_DIR := packages/lambda_layer
+
 # Helper function to require ENV to be either {dev | prod}
 require-env:
 ifeq ($(filter $(ENV),dev prod),)
@@ -34,4 +38,8 @@ tf: require-env
 		terraform $(TF_COMMAND) $$(if [ "$(TF_COMMAND)" = "apply" ] && [ "$(AUTO_APPROVE)" = "true" ]; then echo "-auto-approve"; fi) \
 		$$(if [ -f "config.tfvars" ]; then echo "-var-file=config.tfvars"; fi)
 
-
+tf-sam-start-api: require-env
+	@echo "Starting SAM with Terraform $(ENV) workspace"
+	@cd $(TERRAFORM_DIR) && \
+		terraform workspace select $(ENV) && \
+		sam local start-api -p 8000 --env-vars $(ROOT_DIR)/env.json --hook-name terraform
