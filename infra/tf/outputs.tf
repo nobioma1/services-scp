@@ -5,12 +5,12 @@ output "frontend_url" {
 
 output "events_url" {
   description = "Events service URL"
-  value       = module.aws-events-elasticbeanstalk.eb_environment_domain
+  value       = aws_api_gateway_stage.api_gw_events_stage.invoke_url
 }
 
 output "tickets_url" {
   description = "Tickets service URL"
-  value       = module.aws-tickets-elasticbeanstalk.eb_environment_domain
+  value       = aws_api_gateway_stage.api_gw_events_stage.invoke_url
 }
 
 output "feedbacks_queue_url" {
