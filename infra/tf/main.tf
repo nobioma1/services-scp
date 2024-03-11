@@ -217,21 +217,6 @@ resource "aws_api_gateway_method" "post_events_method" {
   }
 }
 
-# Enable Cors for get events method
-resource "aws_api_gateway_method_response" "get_events_method_response" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  resource_id = aws_api_gateway_resource.events_resource.id
-
-  http_method = aws_api_gateway_method.get_events_method.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true,
-    "method.response.header.Access-Control-Allow-Methods" = true,
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
 # GET /events - lambda function, resource, method integration
 resource "aws_api_gateway_integration" "get_events_integration" {
   rest_api_id             = module.api_gw_events.api_gateway_id
@@ -241,25 +226,6 @@ resource "aws_api_gateway_integration" "get_events_integration" {
 
   http_method = aws_api_gateway_method.get_events_method.http_method
   uri         = module.get_post_events_lambda.lambda_function_invoke_arn
-}
-
-resource "aws_api_gateway_integration_response" "get_events_integration_response" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  resource_id = aws_api_gateway_resource.events_resource.id
-
-  http_method = aws_api_gateway_method.get_events_method.http_method
-  status_code = aws_api_gateway_method_response.get_events_method_response.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-
-  depends_on = [
-    aws_api_gateway_method.get_events_method,
-    aws_api_gateway_integration.get_events_integration
-  ]
 }
 
 # GET /events/{eventsId} - lambda function, resource, method integration
