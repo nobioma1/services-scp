@@ -1,0 +1,8 @@
+{
+  "EventsAPIControllerFunction": {
+    "MONGO_URI": "mongodb+srv://dbuser:password@cluster0.ylsehze.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  },
+  "TicketsAPIControllerFunction": {
+    "MONGO_URI": "mongodb+srv://dbuser:password@cluster0.nzwfepd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  }
+}

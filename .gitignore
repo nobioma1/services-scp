@@ -42,3 +42,6 @@ yarn-error.log*
 .terraformrc
 terraform.rc
 *.tfvars
+
+infra/tf/.aws-sam-iacs/*
+env.json
