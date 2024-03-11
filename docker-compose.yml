@@ -9,37 +9,13 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - events-service
-      - tickets-service
       - feedbacks-service
     environment:
-      VITE_EVENTS_SERVICE_DOMAIN: http://localhost:8001
-      VITE_TICKETS_SERVICE_DOMAIN: http://localhost:8002
+      VITE_EVENTS_SERVICE_DOMAIN: http://localhost:8000
+      VITE_TICKETS_SERVICE_DOMAIN: http://localhost:8000
       # VITE_FEEDBACKS_SERVICE_DOMAIN: http://localhost:8003
       VITE_FEEDBACKS_SERVICE_DOMAIN: http://getfeedbacksapp-nvcex.eba-swsxwfmq.us-east-1.elasticbeanstalk.com
       VITE_URL_SHORTENER_SERVICE_URL: http://shortlink.us-east-1.elasticbeanstalk.com/api
-
-  events-service:
-    build: ./services/events
-    volumes:
-      - ./services/events:/app/
-      - /app/node_modules
-    ports:
-      - '8001:8001'
-    environment:
-      PORT: 8001
-      MONGO_URI: ${EVENTS_MONGO_URI}
-
-  tickets-service:
-    build: ./services/tickets
-    volumes:
-      - ./services/tickets:/app/
-      - /app/node_modules
-    ports:
-      - '8002:8002'
-    environment:
-      PORT: 8002
-      MONGO_URI: ${TICKETS_MONGO_URI}
 
   feedbacks-service:
     build: ./services/feedbacks
