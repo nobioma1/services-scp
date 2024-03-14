@@ -14,7 +14,7 @@ const EventsList = ({ events, setEvent }: EventsListProps) => {
         <Text textAlign="center">No Event found</Text>
       ) : (
         events.map((event) => (
-          <EventItem key={event.id} {...event} setEvent={setEvent} />
+          <EventItem key={event._id} {...event} setEvent={setEvent} />
         ))
       )}
     </Stack>

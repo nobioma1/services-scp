@@ -19,7 +19,7 @@ import { getShareURL } from '../../api/url-shortener-api';
 import ShareModal from '../ShareModal';
 
 export interface Event {
-  id: string;
+  _id: string;
   eventId: string;
   name: string;
   description: string;
