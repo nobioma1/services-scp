@@ -9,18 +9,11 @@ terraform {
     }
   }
 
-  # backend "s3" {
-  #   bucket = "tf-services-app"
-  #   key    = "terraform/state/terraform.tfstate"
-  #   region = "us-east-1"
-  # }
-}
-
-locals {
-  services_layer_path  = "${path.root}/../../packages/lambda-layer"
-  feedback_lambda_path = "${path.root}/../../services/feedbacks/lambda"
-  events_lambda_path   = "${path.root}/../../services/events"
-  tickets_lambda_path  = "${path.root}/../../services/tickets"
+  backend "s3" {
+    bucket = "tf-state-services-app"
+    key    = "terraform/state/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 # Get LabRole (Learner Lab)
@@ -56,8 +49,8 @@ resource "random_string" "hash" {
   upper   = false
 }
 
-# --- FRONTEND ---
-# --- Static Website ---
+# ----------------------------- FRONTEND --------------------------------------
+# create s3 bucket for static hosting
 module "s3_static_website" {
   source = "./modules/s3-static-website"
 
@@ -74,18 +67,18 @@ resource "doppler_secret" "FRONTEND_BUCKET_NAME" {
   depends_on = [module.s3_static_website]
 }
 
-# --- SERVICES ---
+# ----------------------------- SERVICES --------------------------------------
 # Create services lambda function layer
 resource "aws_lambda_layer_version" "services_lambda_layer" {
   layer_name  = "services-lambda-layer"
   description = "Node_modules for services"
 
   compatible_runtimes = ["nodejs18.x"]
-  filename            = "${local.services_layer_path}/services_lambda_layer.zip"
-  source_code_hash    = filebase64sha256("${local.services_layer_path}/services_lambda_layer.zip")
+  filename            = "${path.root}/../../packages/lambda-layer/services_lambda_layer.zip"
+  source_code_hash    = filebase64sha256("${path.root}/../../packages/lambda-layer/services_lambda_layer.zip")
 }
 
-# --- Events Service ---
+# # ---------------------------- EVENTS SERVICE -------------------------------
 # GET | POST - events lambda function
 module "get_post_events_lambda" {
   source = "./modules/aws_lambda"
@@ -95,203 +88,89 @@ module "get_post_events_lambda" {
   runtime       = "nodejs18.x"
   role_arn      = data.aws_iam_role.iam_role.arn
 
-  source_dir  = "${local.events_lambda_path}/EventsAPIControllerFunction"
+  source_dir  = "${path.root}/../../services/events/EventsAPIControllerFunction"
   output_path = "${path.module}/build/events_api_controller.zip"
   layers      = [aws_lambda_layer_version.services_lambda_layer.arn]
+
   environment_variables = {
     MONGO_URI = "${module.secrets.events_db_uri}"
   }
 }
 
-# Create API Gateway for Events Service
-module "api_gw_events" {
-  source = "./modules/aws_api_gw_rest"
+# create api gateway for events service
+resource "aws_apigatewayv2_api" "events_api_gw" {
+  name          = "events-api-gw"
+  description   = "API service events service"
+  protocol_type = "HTTP"
 
-  api_gateway_name        = "events-api"
-  api_gateway_description = "API Service events service"
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["Content-Type"]
+  }
 }
 
-# Create model for create event
-resource "aws_api_gateway_model" "create_event_model" {
-  rest_api_id  = module.api_gw_events.api_gateway_id
-  name         = "CreateEventModel"
-  description  = "Model for create event request body"
-  content_type = "application/json"
+# events api gateway stage 
+resource "aws_apigatewayv2_stage" "events_stage" {
+  api_id = aws_apigatewayv2_api.events_api_gw.id
 
-  schema = jsonencode({
-    "$schema" = "http://json-schema.org/draft-04/schema#"
-    "title"   = "CreateEventDto"
-    "type"    = "object"
-    "properties" = {
-      "name" = {
-        "type"      = "string"
-        "maxLength" = 250
-        "minLength" = 1
-      }
-      "description" = {
-        "type"      = "string"
-        "maxLength" = 500
-      }
-      "date" = {
-        "type"   = "string"
-        "format" = "date-time"
-      }
-      "location" = {
-        "type" = "object"
-        "properties" = {
-          "address" = { "type" = "string" }
-        }
-        "required" = ["address"]
-      }
-      "hostName" = {
-        "type"      = "string"
-        "minLength" = 1
-      }
-    }
-    "required" = ["name", "hostName", "location"]
-  })
+  name        = terraform.workspace
+  auto_deploy = true
 }
 
-# Create event body validator
-resource "aws_api_gateway_request_validator" "create_event_validator" {
-  name                        = "event-body-validator"
-  rest_api_id                 = module.api_gw_events.api_gateway_id
-  validate_request_body       = true
-  validate_request_parameters = false
+# events api gateway lambda integration 
+resource "aws_apigatewayv2_integration" "get_post_events_integration" {
+  api_id = aws_apigatewayv2_api.events_api_gw.id
+
+  integration_uri    = module.get_post_events_lambda.lambda_function_invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
 }
 
+# GET /events api gateway route 
+resource "aws_apigatewayv2_route" "get_events_route" {
+  api_id = aws_apigatewayv2_api.events_api_gw.id
 
-# /events - Create api gateway events resource
-resource "aws_api_gateway_resource" "events_resource" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  parent_id   = module.api_gw_events.api_gateway_root_resource_id
-  path_part   = "events"
+  route_key = "GET /events"
+  target    = "integrations/${aws_apigatewayv2_integration.get_post_events_integration.id}"
 }
 
-# /events/{eventId} - Create api gateway eventId resource
-resource "aws_api_gateway_resource" "event_id_resource" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  parent_id   = aws_api_gateway_resource.events_resource.id
-  path_part   = "{eventId}"
+# POST /events api gateway route 
+resource "aws_apigatewayv2_route" "post_events_route" {
+  api_id = aws_apigatewayv2_api.events_api_gw.id
+
+  route_key = "POST /events"
+  target    = "integrations/${aws_apigatewayv2_integration.get_post_events_integration.id}"
 }
 
-# GET | POST - events lambda function execution permission
-resource "aws_lambda_permission" "get_post_events_lambda_api_gw_permission" {
+# GET /events/{eventId} api gateway route 
+resource "aws_apigatewayv2_route" "get_event_route" {
+  api_id = aws_apigatewayv2_api.events_api_gw.id
+
+  route_key = "GET /events/{eventId}"
+  target    = "integrations/${aws_apigatewayv2_integration.get_post_events_integration.id}"
+}
+
+# api gateway get_post_events_lambda invocation permission 
+resource "aws_lambda_permission" "events_api_gw_lambda_permission" {
   statement_id = "AllowExecutionFromAPIGateway"
   action       = "lambda:InvokeFunction"
   principal    = "apigateway.amazonaws.com"
 
   function_name = module.get_post_events_lambda.lambda_function_name
-  source_arn    = "${module.api_gw_events.api_gateway_execution_arn}/*/*"
-}
-
-# GET /events resource method
-resource "aws_api_gateway_method" "get_events_method" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  resource_id = aws_api_gateway_resource.events_resource.id
-
-  authorization = "NONE"
-  http_method   = "GET"
-}
-
-# GET /events/{eventId} resource method
-resource "aws_api_gateway_method" "get_event_id_method" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  resource_id = aws_api_gateway_resource.event_id_resource.id
-
-  authorization = "NONE"
-  http_method   = "GET"
-}
-
-# POST /events resource method
-resource "aws_api_gateway_method" "post_events_method" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-  resource_id = aws_api_gateway_resource.events_resource.id
-
-  authorization        = "NONE"
-  http_method          = "POST"
-  request_validator_id = aws_api_gateway_request_validator.create_event_validator.id
-
-  request_models = {
-    "application/json" = aws_api_gateway_model.create_event_model.name
-  }
-}
-
-# GET /events - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "get_events_integration" {
-  rest_api_id             = module.api_gw_events.api_gateway_id
-  resource_id             = aws_api_gateway_resource.events_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.get_events_method.http_method
-  uri         = module.get_post_events_lambda.lambda_function_invoke_arn
-}
-
-# GET /events/{eventsId} - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "get_event_id_integration" {
-  rest_api_id             = module.api_gw_events.api_gateway_id
-  resource_id             = aws_api_gateway_resource.event_id_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.get_event_id_method.http_method
-  uri         = module.get_post_events_lambda.lambda_function_invoke_arn
-}
-
-# POST /events - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "post_events_integration" {
-  rest_api_id             = module.api_gw_events.api_gateway_id
-  resource_id             = aws_api_gateway_resource.events_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.post_events_method.http_method
-  uri         = module.get_post_events_lambda.lambda_function_invoke_arn
-}
-
-# api gateway deployment 
-resource "aws_api_gateway_deployment" "api_gw_events_deployment" {
-  rest_api_id = module.api_gw_events.api_gateway_id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.events_resource.id,
-      aws_api_gateway_method.get_events_method.id,
-      aws_api_gateway_integration.get_events_integration.id,
-      aws_api_gateway_method.post_events_method.id,
-      aws_api_gateway_integration.post_events_integration.id,
-      aws_api_gateway_method.get_event_id_method.id,
-      aws_api_gateway_integration.get_event_id_integration.id,
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# api gateway deployment stage 
-resource "aws_api_gateway_stage" "api_gw_events_stage" {
-  deployment_id = aws_api_gateway_deployment.api_gw_events_deployment.id
-  rest_api_id   = module.api_gw_events.api_gateway_id
-  stage_name    = terraform.workspace
-
-  variables = {
-    version = "v1"
-  }
+  source_arn    = "${aws_apigatewayv2_api.events_api_gw.execution_arn}/*/*"
 }
 
 # write EVENTS_DOMAIN to secrets
 resource "doppler_secret" "EVENTS_DOMAIN" {
-  name       = "VITE_EVENTS_SERVICE_DOMAIN"
-  project    = var.project_name
-  config     = terraform.workspace
-  value      = aws_api_gateway_stage.api_gw_events_stage.invoke_url
-  depends_on = [aws_api_gateway_stage.api_gw_events_stage]
+  name    = "VITE_EVENTS_SERVICE_DOMAIN"
+  project = var.project_name
+  config  = terraform.workspace
+  value   = aws_apigatewayv2_stage.events_stage.invoke_url
 }
 
-# --- Tickets Service ---
+
+# ----------------------------- TICKETS SERVICE -------------------------------
 # GET | POST - tickets lambda function
 module "get_post_tickets_lambda" {
   source = "./modules/aws_lambda"
@@ -301,186 +180,80 @@ module "get_post_tickets_lambda" {
   runtime       = "nodejs18.x"
   role_arn      = data.aws_iam_role.iam_role.arn
 
-  source_dir  = "${local.tickets_lambda_path}/TicketsAPIControllerFunction"
+  source_dir  = "${path.root}/../../services/tickets/TicketsAPIControllerFunction"
   output_path = "${path.module}/build/tickets_api_controller.zip"
   layers      = [aws_lambda_layer_version.services_lambda_layer.arn]
+
   environment_variables = {
     MONGO_URI = "${module.secrets.tickets_db_uri}"
   }
 }
 
-# Create API Gateway for Tickects Service
-module "api_gw_tickets" {
-  source = "./modules/aws_api_gw_rest"
+# create api gateway for tickets service
+resource "aws_apigatewayv2_api" "tickets_api_gw" {
+  name          = "tickets-api-gw"
+  description   = "API service tickets service"
+  protocol_type = "HTTP"
 
-  api_gateway_name        = "tickets-api"
-  api_gateway_description = "API Service tickets service"
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["Content-Type"]
+  }
 }
 
-# Create model for create ticket
-resource "aws_api_gateway_model" "create_ticket_model" {
-  rest_api_id  = module.api_gw_tickets.api_gateway_id
-  name         = "CreateEventModel"
-  description  = "Model for create ticket request body"
-  content_type = "application/json"
+# tickets api gateway stage 
+resource "aws_apigatewayv2_stage" "tickets_stage" {
+  api_id = aws_apigatewayv2_api.tickets_api_gw.id
 
-  schema = jsonencode({
-    "$schema" = "http://json-schema.org/draft-04/schema#"
-    "title"   = "CreateTicketDto"
-    "type"    = "object"
-    "properties" = {
-      "name" = {
-        "type"      = "string"
-        "maxLength" = 250
-        "minLength" = 1
-      }
-      "eventId" = {
-        "type" = "string"
-      }
-    }
-    "required" = ["name", "eventId"]
-  })
+  name        = terraform.workspace
+  auto_deploy = true
 }
 
-# Create event body validator
-resource "aws_api_gateway_request_validator" "create_ticket_validator" {
-  name                        = "ticket-body-validator"
-  rest_api_id                 = module.api_gw_tickets.api_gateway_id
-  validate_request_body       = true
-  validate_request_parameters = false
+# tickets api gateway lambda integration 
+resource "aws_apigatewayv2_integration" "get_post_tickets_integration" {
+  api_id = aws_apigatewayv2_api.tickets_api_gw.id
+
+  integration_uri    = module.get_post_tickets_lambda.lambda_function_invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
 }
 
-# /tickets - Create api gateway tickets resource
-resource "aws_api_gateway_resource" "tickets_resource" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-  parent_id   = module.api_gw_tickets.api_gateway_root_resource_id
-  path_part   = "tickets"
+# POST /tickets api gateway route 
+resource "aws_apigatewayv2_route" "post_ticket_route" {
+  api_id = aws_apigatewayv2_api.tickets_api_gw.id
+
+  route_key = "POST /tickets"
+  target    = "integrations/${aws_apigatewayv2_integration.get_post_tickets_integration.id}"
 }
 
-# /tickets/{ticketId} - Create api gateway ticketId resource
-resource "aws_api_gateway_resource" "ticket_id_resource" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-  parent_id   = aws_api_gateway_resource.tickets_resource.id
-  path_part   = "{ticketId}"
+# GET /tickets/{ticketId} api gateway route 
+resource "aws_apigatewayv2_route" "get_ticket_route" {
+  api_id = aws_apigatewayv2_api.tickets_api_gw.id
+
+  route_key = "GET /tickets/{ticketId}"
+  target    = "integrations/${aws_apigatewayv2_integration.get_post_tickets_integration.id}"
 }
 
-# GET | POST - tickets lambda function execution permission
-resource "aws_lambda_permission" "get_post_tickets_lambda_api_gw_permission" {
+# api gateway get_post_tickets_lambda invocation permission 
+resource "aws_lambda_permission" "tickets_api_gw_lambda_permission" {
   statement_id = "AllowExecutionFromAPIGateway"
   action       = "lambda:InvokeFunction"
   principal    = "apigateway.amazonaws.com"
 
   function_name = module.get_post_tickets_lambda.lambda_function_name
-  source_arn    = "${module.api_gw_tickets.api_gateway_execution_arn}/*/*"
-}
-
-# GET /tickets resource methods
-resource "aws_api_gateway_method" "get_tickets_method" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-  resource_id = aws_api_gateway_resource.tickets_resource.id
-
-  authorization = "NONE"
-  http_method   = "GET"
-}
-
-# GET /tickets/{ticketId} resource methods
-resource "aws_api_gateway_method" "get_ticket_id_method" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-  resource_id = aws_api_gateway_resource.ticket_id_resource.id
-
-  authorization = "NONE"
-  http_method   = "GET"
-}
-
-# POST /tickets resource methods
-resource "aws_api_gateway_method" "post_tickets_method" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-  resource_id = aws_api_gateway_resource.tickets_resource.id
-
-  authorization        = "NONE"
-  http_method          = "POST"
-  request_validator_id = aws_api_gateway_request_validator.create_ticket_validator.id
-
-  request_models = {
-    "application/json" = aws_api_gateway_model.create_ticket_model.name
-  }
-}
-
-# GET /tickets - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "get_tickets_integration" {
-  rest_api_id             = module.api_gw_tickets.api_gateway_id
-  resource_id             = aws_api_gateway_resource.tickets_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.get_tickets_method.http_method
-  uri         = module.get_post_tickets_lambda.lambda_function_invoke_arn
-}
-
-# GET /tickets/{ticketId} - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "get_ticket_id_integration" {
-  rest_api_id             = module.api_gw_tickets.api_gateway_id
-  resource_id             = aws_api_gateway_resource.ticket_id_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.get_ticket_id_method.http_method
-  uri         = module.get_post_tickets_lambda.lambda_function_invoke_arn
-}
-
-# POST /tickets - lambda function, resource, method integration
-resource "aws_api_gateway_integration" "post_tickets_integration" {
-  rest_api_id             = module.api_gw_tickets.api_gateway_id
-  resource_id             = aws_api_gateway_resource.tickets_resource.id
-  type                    = "AWS_PROXY"
-  integration_http_method = "POST"
-
-  http_method = aws_api_gateway_method.post_tickets_method.http_method
-  uri         = module.get_post_tickets_lambda.lambda_function_invoke_arn
-}
-
-# api gateway deployment 
-resource "aws_api_gateway_deployment" "api_gw_tickets_deployment" {
-  rest_api_id = module.api_gw_tickets.api_gateway_id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.tickets_resource.id,
-      aws_api_gateway_method.get_tickets_method.id,
-      aws_api_gateway_integration.get_tickets_integration.id,
-      aws_api_gateway_method.post_tickets_method.id,
-      aws_api_gateway_integration.post_tickets_integration.id,
-      aws_api_gateway_method.get_ticket_id_method.id,
-      aws_api_gateway_integration.get_ticket_id_integration.id,
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# api gateway deployment stage 
-resource "aws_api_gateway_stage" "api_gw_tickets_stage" {
-  deployment_id = aws_api_gateway_deployment.api_gw_tickets_deployment.id
-  rest_api_id   = module.api_gw_tickets.api_gateway_id
-  stage_name    = terraform.workspace
-
-  variables = {
-    version = "v1"
-  }
+  source_arn    = "${aws_apigatewayv2_api.tickets_api_gw.execution_arn}/*/*"
 }
 
 # write TICKETS_DOMAIN to secrets
 resource "doppler_secret" "TICKETS_DOMAIN" {
-  name       = "VITE_TICKETS_SERVICE_DOMAIN"
-  project    = var.project_name
-  config     = terraform.workspace
-  value      = aws_api_gateway_stage.api_gw_tickets_stage.invoke_url
-  depends_on = [aws_api_gateway_stage.api_gw_tickets_stage]
+  name    = "VITE_TICKETS_SERVICE_DOMAIN"
+  project = var.project_name
+  config  = terraform.workspace
+  value   = aws_apigatewayv2_stage.tickets_stage.invoke_url
 }
 
-# --- Feedbacks/Reviews Service ---
+# -------------------------- FEEDBACK/REVIEWS SERVICE --------------------------
 # Create queue
 resource "aws_sqs_queue" "feedback_ratings_queue" {
   name = "feedbackRatingsQueue"
@@ -495,7 +268,7 @@ module "feedback_queue_processor_lambda" {
   runtime       = "nodejs18.x"
   role_arn      = data.aws_iam_role.iam_role.arn
 
-  source_dir  = "${local.feedback_lambda_path}/FeedbackQueueProcessor"
+  source_dir  = "${path.root}/../../services/feedbacks/lambda/FeedbackQueueProcessor"
   output_path = "${path.module}/build/feedback_queue_processor.zip"
   layers      = [aws_lambda_layer_version.services_lambda_layer.arn]
 

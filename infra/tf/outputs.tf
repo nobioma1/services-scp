@@ -5,12 +5,12 @@ output "frontend_url" {
 
 output "events_url" {
   description = "Events service URL"
-  value       = aws_api_gateway_stage.api_gw_events_stage.invoke_url
+  value       = aws_apigatewayv2_stage.events_stage.invoke_url
 }
 
 output "tickets_url" {
   description = "Tickets service URL"
-  value       = aws_api_gateway_stage.api_gw_events_stage.invoke_url
+  value       = aws_apigatewayv2_stage.tickets_stage.invoke_url
 }
 
 output "feedbacks_queue_url" {
