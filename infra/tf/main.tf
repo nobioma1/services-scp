@@ -299,6 +299,7 @@ resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
 # Create Elastic Beanstalk for Feedbacks service
 module "aws-feedbacks-elasticbeanstalk" {
   source = "./modules/aws-eb"
+  count = 0 # temporarily remove EB
 
   eb_application_name        = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
   eb_env_name                = lower("getfeedbacksapp-${random_string.hash.result}")
