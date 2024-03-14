@@ -169,7 +169,11 @@ const NewEventModal = ({ isOpen, onClose, finalRef }: NewEventModalProps) => {
             <Button onClick={onClose} mr={3}>
               Cancel
             </Button>
-            <Button colorScheme="purple" type="submit">
+            <Button
+              colorScheme="purple"
+              type="submit"
+              isLoading={mutation.status === 'pending'}
+            >
               Create Event
             </Button>
           </ModalFooter>
