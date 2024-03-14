@@ -11,8 +11,8 @@ services:
     depends_on:
       - feedbacks-service
     environment:
-      VITE_EVENTS_SERVICE_DOMAIN: http://localhost:8000
-      VITE_TICKETS_SERVICE_DOMAIN: http://localhost:8000
+      VITE_EVENTS_SERVICE_DOMAIN: https://2q4va1qw46.execute-api.us-east-1.amazonaws.com/dev
+      VITE_TICKETS_SERVICE_DOMAIN: https://j9hxhayim6.execute-api.us-east-1.amazonaws.com/dev
       # VITE_FEEDBACKS_SERVICE_DOMAIN: http://localhost:8003
       VITE_FEEDBACKS_SERVICE_DOMAIN: http://getfeedbacksapp-nvcex.eba-swsxwfmq.us-east-1.elasticbeanstalk.com
       VITE_URL_SHORTENER_SERVICE_URL: http://shortlink.us-east-1.elasticbeanstalk.com/api
