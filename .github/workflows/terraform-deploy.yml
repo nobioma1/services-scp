@@ -1,4 +1,4 @@
-name: Deploy Terraform Infrastructure
+name: Deploy Terraform Infrastructure, Events and Tickets serverless
 
 on:
   push:

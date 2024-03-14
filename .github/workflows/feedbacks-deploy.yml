@@ -1,6 +1,10 @@
-name: Deploy Application
+name: Deploy Feedbacks Application
 
-on: [workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'services/feedbacks/**'
+  workflow_dispatch:
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -21,24 +25,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check for changes in services/feedbacks
-        id: buildapifilter
-        uses: dorny/paths-filter@v2
-        with:
-          filters: |
-            feedbacks:
-              - 'services/feedbacks/**'
-      
       - uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: Install Dependencies
-        if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: npm install
       
       - name: Run E2E Tests
-        if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: CI=true npm run test:e2e 
 
       - name: Configure AWS Credentials
@@ -47,14 +41,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Build and Generate deployment package
-        if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           npm run build
           zip -r feedbacks-${{ github.sha }}.zip ./dist ./views ./public ./package.json -x '*.git*'
           aws s3 cp feedbacks-${{ github.sha }}.zip s3://${{env.EB_ARTIFACTS_BUCKET}}
 
       - name: Create EB application version
-        if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           aws elasticbeanstalk create-application-version \
           --application-name ${{ secrets.FEEDBACKS_EB_APPLICATION_NAME }} \
@@ -62,7 +54,6 @@ jobs:
           --source-bundle S3Bucket="${{ env.EB_ARTIFACTS_BUCKET }}",S3Key="feedbacks-${{ github.sha }}.zip"
 
       - name: Deploy new application version
-        if: steps.buildapifilter.outputs.feedbacks == 'true'
         run: |
           aws elasticbeanstalk update-environment \
           --environment-name ${{ secrets.FEEDBACKS_EB_ENVIRONMENT_NAME }} \
