@@ -17,7 +17,7 @@ function isValidString(value) {
   return typeof value === 'string' && value.trim() !== '';
 }
 
-function buildEventObject({ name, description, address, date, hostName }) {
+function buildEventObject({ name, description, location, date, hostName }) {
   const errors = {};
 
   if (!isValidString(name) || name.length > 250) {
@@ -31,8 +31,8 @@ function buildEventObject({ name, description, address, date, hostName }) {
     errors.description = 'Description must be less than 500 characters.';
   }
 
-  if (!isValidString(address)) {
-    errors.address = 'Address must be a non-empty string.';
+  if (!isValidString(location.address)) {
+    errors.location.address = 'Address must be a non-empty string.';
   }
 
   if (!isValidString(hostName)) {
@@ -55,9 +55,7 @@ function buildEventObject({ name, description, address, date, hostName }) {
       name,
       date: date ?? new Date(),
       description,
-      location: {
-        address,
-      },
+      location,
       eventId: uuidV4(),
       createdBy: hostName,
       createdAt: new Date(),
