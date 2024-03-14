@@ -1,6 +1,13 @@
 name: Deploy Terraform Infrastructure
 
-on: [workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'infra/tf/**'
+      - 'services/events/**'
+      - 'services/tickets/**'
+      - 'packages/lambda-layer/**'
+  workflow_dispatch:
 
 env:
   TF_WORKSPACE: prod
