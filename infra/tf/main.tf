@@ -297,44 +297,44 @@ resource "aws_lambda_event_source_mapping" "sqs_lambda_trigger" {
 
 
 # Create Elastic Beanstalk for Feedbacks service
-# module "aws-feedbacks-elasticbeanstalk" {
-#   source = "./modules/aws-eb"
+module "aws-feedbacks-elasticbeanstalk" {
+  source = "./modules/aws-eb"
 
-#   eb_application_name        = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
-#   eb_env_name                = lower("getfeedbacksapp-${random_string.hash.result}")
-#   eb_env_instance_profile    = "LabInstanceProfile"
-#   eb_environment_type        = "LoadBalanced"
-#   eb_env_solution_stack_name = "64bit Amazon Linux 2023 v6.1.1 running Node.js 20"
-#   environment_variables = [
-#     { name = "AWS_REGION", value = "${var.aws_default_region}" },
-#     { name = "MONGO_URI", value = "${module.secrets.feedbacks_db_uri}" },
-#     { name = "SQS_QUEUE_URL", value = "${aws_sqs_queue.feedback_ratings_queue.url}" },
-#   ]
-# }
+  eb_application_name        = "feedbacks-ratings-app-${terraform.workspace}-${random_string.hash.result}"
+  eb_env_name                = lower("getfeedbacksapp-${random_string.hash.result}")
+  eb_env_instance_profile    = "LabInstanceProfile"
+  eb_environment_type        = "LoadBalanced"
+  eb_env_solution_stack_name = "64bit Amazon Linux 2023 v6.1.1 running Node.js 20"
+  environment_variables = [
+    { name = "AWS_REGION", value = "${var.aws_default_region}" },
+    { name = "MONGO_URI", value = "${module.secrets.feedbacks_db_uri}" },
+    { name = "SQS_QUEUE_URL", value = "${aws_sqs_queue.feedback_ratings_queue.url}" },
+  ]
+}
 
-# # write FEEDBACKS_EB_APPLICATION_NAME to secrets
-# resource "doppler_secret" "FEEDBACKS_EB_APPLICATION_NAME" {
-#   name       = "FEEDBACKS_EB_APPLICATION_NAME"
-#   project    = var.project_name
-#   config     = terraform.workspace
-#   value      = module.aws-feedbacks-elasticbeanstalk.eb_application_name
-#   depends_on = [module.aws-feedbacks-elasticbeanstalk]
-# }
+# write FEEDBACKS_EB_APPLICATION_NAME to secrets
+resource "doppler_secret" "FEEDBACKS_EB_APPLICATION_NAME" {
+  name       = "FEEDBACKS_EB_APPLICATION_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_application_name
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
+}
 
-# # write FEEDBACKS_EB_ENVIRONMENT_NAME to secrets
-# resource "doppler_secret" "FEEDBACKS_EB_ENVIRONMENT_NAME" {
-#   name       = "FEEDBACKS_EB_ENVIRONMENT_NAME"
-#   project    = var.project_name
-#   config     = terraform.workspace
-#   value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_name
-#   depends_on = [module.aws-feedbacks-elasticbeanstalk]
-# }
+# write FEEDBACKS_EB_ENVIRONMENT_NAME to secrets
+resource "doppler_secret" "FEEDBACKS_EB_ENVIRONMENT_NAME" {
+  name       = "FEEDBACKS_EB_ENVIRONMENT_NAME"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_name
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
+}
 
-# # write FEEDBACKS_DOMAIN to secrets
-# resource "doppler_secret" "FEEDBACKS_DOMAIN" {
-#   name       = "VITE_FEEDBACKS_SERVICE_DOMAIN"
-#   project    = var.project_name
-#   config     = terraform.workspace
-#   value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_domain
-#   depends_on = [module.aws-feedbacks-elasticbeanstalk]
-# }
+# write FEEDBACKS_DOMAIN to secrets
+resource "doppler_secret" "FEEDBACKS_DOMAIN" {
+  name       = "VITE_FEEDBACKS_SERVICE_DOMAIN"
+  project    = var.project_name
+  config     = terraform.workspace
+  value      = module.aws-feedbacks-elasticbeanstalk.eb_environment_domain
+  depends_on = [module.aws-feedbacks-elasticbeanstalk]
+}

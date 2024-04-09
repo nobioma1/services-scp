@@ -18,8 +18,7 @@ output "feedbacks_queue_url" {
   value       = aws_sqs_queue.feedback_ratings_queue.url
 }
 
-# output "feedbacks_url" {
-#   description = "Feedbacks service URL"
-#   value       = module.aws-feedbacks-elasticbeanstalk.eb_environment_domain
-# }
-
+output "feedbacks_url" {
+  description = "Feedbacks service URL"
+  value       = module.aws-feedbacks-elasticbeanstalk.eb_environment_domain
+}
