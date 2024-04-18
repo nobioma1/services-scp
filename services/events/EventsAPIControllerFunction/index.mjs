@@ -1,3 +1,4 @@
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { MongoClient } from 'mongodb';
 import { validate as isValidUUID, v4 as uuidV4 } from 'uuid';
 
@@ -65,6 +66,7 @@ function buildEventObject({ name, description, location, date, hostName }) {
 
 export async function handler(event) {
   const uri = process.env.MONGO_URI;
+  const sns_events_arn = process.env.EVENTS.SNS_TOPIC_ARN;
   const client = new MongoClient(uri);
 
   let response;
@@ -94,6 +96,20 @@ export async function handler(event) {
         }
 
         await collection.insertOne(event);
+
+        if (sns_events_arn) {
+          const snsClient = new SNSClient({});
+          await snsClient.send(
+            new PublishCommand({
+              Message: JSON.stringify({
+                name: 'NEW EVENT',
+                eventId: event.eventId,
+              }),
+              TopicArn: sns_events_arn,
+            })
+          );
+        }
+
         response = generateAPIResponse({ eventId: event.eventId }, 201);
         break;
       }
