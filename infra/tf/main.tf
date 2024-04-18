@@ -79,6 +79,11 @@ resource "aws_lambda_layer_version" "services_lambda_layer" {
 }
 
 # # ---------------------------- EVENTS SERVICE -------------------------------
+# create events SNS Topic
+resource "aws_sns_topic" "events_sns_topic" {
+  name = "events"
+}
+
 # GET | POST - events lambda function
 module "get_post_events_lambda" {
   source = "./modules/aws_lambda"
