@@ -99,6 +99,7 @@ module "get_post_events_lambda" {
 
   environment_variables = {
     MONGO_URI = "${module.secrets.events_db_uri}"
+    EVENTS_SNS_ARN = "${aws_sns_topic.events_sns_topic.arn}"
   }
 }
 
