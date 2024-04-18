@@ -66,7 +66,7 @@ function buildEventObject({ name, description, location, date, hostName }) {
 
 export async function handler(event) {
   const uri = process.env.MONGO_URI;
-  const sns_events_arn = process.env.EVENTS.SNS_TOPIC_ARN;
+  const sns_events_arn = process.env.EVENTS_SNS_ARN;
   const client = new MongoClient(uri);
 
   let response;
